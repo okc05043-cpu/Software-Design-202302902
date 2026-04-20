@@ -10,3 +10,8 @@ body {
   margin: 0;
   font-family: 'Noto Sans KR', system-ui, sans-serif;
 }
+
+input[type="date"],
+input[type="time"] {
+  color-scheme: dark;
+}

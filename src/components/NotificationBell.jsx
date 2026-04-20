@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getNotifications, saveNotifications } from './storageHelpers';
+import { api } from '../api';
 
 export default function NotificationBell({ userId, isMobile }) {
   const [open, setOpen]  = useState(false);
   const [list, setList]  = useState([]);
   const ref = useRef(null);
 
-  const load = () => setList(getNotifications().filter(n => n.userId === userId));
+  const load = () => api.getNotifications().then(setList).catch(() => {});
 
   useEffect(() => { load(); }, [userId]);
 
@@ -19,32 +19,27 @@ export default function NotificationBell({ userId, isMobile }) {
 
   const unread = list.filter(n => !n.isRead).length;
 
-  const handleOpen = () => {
+  const handleOpen = async () => {
     const next = !open;
     setOpen(next);
     if (next && unread > 0) {
-      const all = getNotifications();
-      saveNotifications(all.map(n => n.userId === userId ? { ...n, isRead: true } : n));
+      await api.markAllRead().catch(() => {});
       setList(prev => prev.map(n => ({ ...n, isRead: true })));
     }
   };
 
-  const handleClear = () => {
-    saveNotifications(getNotifications().filter(n => n.userId !== userId));
-    setList([]);
-  };
-
-  const ICON = { grade: '📊', feedback: '💬', counseling: '📋' };
-  const fmt  = iso => {
+  const fmt = iso => {
     const d = new Date(iso);
     return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
   };
 
+  const ICON = { grade: '성적', feedback: '피드백', counseling: '상담' };
+
   return (
     <div ref={ref} style={{ position: 'relative' }}>
       <button onClick={handleOpen} style={{
-        position: 'relative', background: 'rgba(255,255,255,0.2)', border: 'none',
-        borderRadius: 8, padding: '5px 9px', cursor: 'pointer', color: 'white', fontSize: 16, lineHeight: 1,
+        position: 'relative', background: 'rgba(124,106,240,0.2)', border: '1px solid rgba(124,106,240,0.3)',
+        borderRadius: 8, padding: '5px 9px', cursor: 'pointer', color: '#a89bf7', fontSize: 16, lineHeight: 1,
       }}>
         🔔
         {unread > 0 && (
@@ -66,28 +61,29 @@ export default function NotificationBell({ userId, isMobile }) {
           left: isMobile ? 8 : 'auto',
           width: isMobile ? 'auto' : 330,
           maxHeight: 380, overflowY: 'auto',
-          background: 'white', borderRadius: 12,
-          boxShadow: '0 8px 24px rgba(0,0,0,.18)',
-          border: '1px solid #e5e7eb', zIndex: 1000,
+          background: '#1a1d27', borderRadius: 12,
+          boxShadow: '0 8px 24px rgba(0,0,0,.5)',
+          border: '1px solid #2d3148', zIndex: 1000,
         }}>
-          <div style={{ padding: '11px 14px', borderBottom: '1px solid #f3f4f6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontWeight: 'bold', color: '#1f2937', fontSize: 14 }}>알림</span>
-            {list.length > 0 && (
-              <button onClick={handleClear} style={{ fontSize: 12, color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer' }}>전체 삭제</button>
-            )}
+          <div style={{ padding: '11px 14px', borderBottom: '1px solid #2d3148', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontWeight: 'bold', color: '#dde0f0', fontSize: 14 }}>알림</span>
           </div>
           {list.length === 0 ? (
-            <div style={{ padding: '24px 16px', textAlign: 'center', color: '#9ca3af', fontSize: 13 }}>알림이 없습니다.</div>
+            <div style={{ padding: '24px 16px', textAlign: 'center', color: '#8b8fa8', fontSize: 13 }}>알림이 없습니다.</div>
           ) : list.slice(0, 30).map(n => (
-            <div key={n.id} style={{ padding: '11px 14px', borderBottom: '1px solid #f9fafb', background: n.isRead ? 'white' : '#eff6ff' }}>
+            <div key={n.id} style={{ padding: '11px 14px', borderBottom: '1px solid #2d3148', background: n.isRead ? '#1a1d27' : '#1e1b3a' }}>
               <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                <span style={{ fontSize: 17, flexShrink: 0 }}>{ICON[n.type] || '📢'}</span>
+                <span style={{
+                  fontSize: 11, flexShrink: 0, background: '#252836', color: '#a89bf7',
+                  borderRadius: 4, padding: '2px 6px', fontWeight: 'bold', whiteSpace: 'nowrap', marginTop: 1,
+                  border: '1px solid #4a3f8a',
+                }}>{ICON[n.type] || '알림'}</span>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: n.isRead ? 'normal' : 'bold', color: '#1f2937' }}>{n.title}</div>
-                  <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>{n.message}</div>
-                  <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 3 }}>{fmt(n.date)}</div>
+                  <div style={{ fontSize: 13, fontWeight: n.isRead ? 'normal' : 'bold', color: '#dde0f0' }}>{n.title}</div>
+                  <div style={{ fontSize: 12, color: '#8b8fa8', marginTop: 2 }}>{n.message}</div>
+                  <div style={{ fontSize: 11, color: '#8b8fa8', marginTop: 3 }}>{fmt(n.date)}</div>
                 </div>
-                {!n.isRead && <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#2563eb', flexShrink: 0, marginTop: 4 }} />}
+                {!n.isRead && <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#7c6af0', flexShrink: 0, marginTop: 4 }} />}
               </div>
             </div>
           ))}

@@ -13,9 +13,9 @@ export default function NotesTab({ notes, customFields, isEditing, isTeacher, on
         <h3 style={{ ...s.sectionTitle, marginBottom: 0 }}>추가 항목</h3>
         {isEditing && isTeacher && <button onClick={onAddField} style={s.addBtn}>+ 항목 추가</button>}
       </div>
-      {customFields.length === 0 && <p style={{ color: '#9ca3af', fontSize: 14 }}>추가된 항목이 없습니다.</p>}
+      {customFields.length === 0 && <p style={{ color: '#8b8fa8', fontSize: 14 }}>추가된 항목이 없습니다.</p>}
       {customFields.map((field, idx) => (
-        <div key={field.id||idx} style={{ background: '#f9fafb', borderRadius: 8, padding: 12, marginBottom: 12 }}>
+        <div key={field.id||idx} style={{ background: '#252836', borderRadius: 8, padding: 12, marginBottom: 12, border: '1px solid #363a52' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
             {isEditing && isTeacher
               ? <input value={field.label} onChange={e => onFieldLabelChange(idx, e.target.value)}

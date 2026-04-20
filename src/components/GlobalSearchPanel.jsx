@@ -62,14 +62,14 @@ export default function GlobalSearchPanel({ studentList, isMobile, onSelectStude
 
   return (
     <div>
-      <h4 style={{ margin: '0 0 14px', fontSize: 14, color: '#374151' }}>통합 검색</h4>
+      <h4 style={{ margin: '0 0 14px', fontSize: 14, color: '#dde0f0' }}>통합 검색</h4>
 
       <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
         {SEARCH_TYPES.map(t => (
           <button key={t.key} onClick={() => { setSearchType(t.key); setResults(null); setQuery(''); }} style={{
             padding: '4px 14px', borderRadius: 20, border: 'none', cursor: 'pointer', fontSize: 13,
-            background: searchType === t.key ? '#2563eb' : '#e5e7eb',
-            color:      searchType === t.key ? 'white' : '#374151',
+            background: searchType === t.key ? '#7c6af0' : '#252836',
+            color:      searchType === t.key ? 'white' : '#8b8fa8',
           }}>{t.label}</button>
         ))}
       </div>
@@ -103,41 +103,41 @@ export default function GlobalSearchPanel({ studentList, isMobile, onSelectStude
       </div>
 
       {results === null ? (
-        <p style={{ color: '#9ca3af', fontSize: 14 }}>검색 조건을 입력하고 검색 버튼을 누르세요.</p>
+        <p style={{ color: '#8b8fa8', fontSize: 14 }}>검색 조건을 입력하고 검색 버튼을 누르세요.</p>
       ) : results.length === 0 ? (
-        <p style={{ color: '#9ca3af', fontSize: 14 }}>검색 결과가 없습니다.</p>
+        <p style={{ color: '#8b8fa8', fontSize: 14 }}>검색 결과가 없습니다.</p>
       ) : (
         <>
-          <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 10 }}>총 {results.length}명의 학생에서 결과 발견</div>
+          <div style={{ fontSize: 13, color: '#8b8fa8', marginBottom: 10 }}>총 {results.length}명의 학생에서 결과 발견</div>
           {results.map(({ student, type, matches }) => (
-            <div key={student.id} style={{ background: '#f9fafb', borderRadius: 8, padding: 14, marginBottom: 12, borderLeft: '4px solid #2563eb' }}>
+            <div key={student.id} style={{ background: '#252836', borderRadius: 8, padding: 14, marginBottom: 12, borderLeft: '4px solid #7c6af0' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                 <div>
-                  <span style={{ fontWeight: 'bold' }}>{student.name}</span>
-                  <span style={{ fontSize: 13, color: '#6b7280', marginLeft: 8 }}>
+                  <span style={{ fontWeight: 'bold', color: '#dde0f0' }}>{student.name}</span>
+                  <span style={{ fontSize: 13, color: '#8b8fa8', marginLeft: 8 }}>
                     {student.grade ? `${student.grade}학년 ` : ''}{student.classNum ? `${student.classNum}반` : ''}
                   </span>
                 </div>
                 <button onClick={() => onSelectStudent(student.id)} style={s.smallBtn}>학생부 보기</button>
               </div>
-              <div style={{ fontSize: 13, color: '#374151' }}>
+              <div style={{ fontSize: 13, color: '#b0b4cc' }}>
                 {type === 'feedback' && matches.map((fb, i) => (
                   <div key={i} style={{ marginBottom: 6 }}>
                     <span style={{ background: CATEGORY_COLORS[fb.category]||'#6b7280', color:'white', padding:'1px 7px', borderRadius:10, fontSize:11, marginRight:6 }}>{fb.category}</span>
-                    <span style={{ fontSize: 11, color: '#6b7280' }}>{fb.date}</span>
+                    <span style={{ fontSize: 11, color: '#8b8fa8' }}>{fb.date}</span>
                     <div style={{ marginTop: 2 }}>{fb.content.slice(0,80)}{fb.content.length>80?'...':''}</div>
                   </div>
                 ))}
                 {type === 'counseling' && matches.map((c, i) => (
                   <div key={i} style={{ marginBottom: 6 }}>
-                    <span style={{ fontSize: 11, color: '#6b7280' }}>{c.date} · {c.teacherName}</span>
+                    <span style={{ fontSize: 11, color: '#8b8fa8' }}>{c.date} · {c.teacherName}</span>
                     <div style={{ marginTop: 2 }}>{c.content.slice(0,80)}{c.content.length>80?'...':''}</div>
                   </div>
                 ))}
                 {type === 'grades' && (
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                     {matches.map((sub, i) => (
-                      <span key={i} style={{ background: '#dbeafe', color: '#1e40af', padding: '2px 10px', borderRadius: 20, fontSize: 12 }}>
+                      <span key={i} style={{ background: '#1e1b3a', color: '#a89bf7', padding: '2px 10px', borderRadius: 20, fontSize: 12 }}>
                         {sub.name}: {sub.score}점
                       </span>
                     ))}

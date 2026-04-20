@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import useIsMobile from '../hooks/useIsMobile';
-import { TABS, MOCK_STUDENTS } from '../components/constants';
-import { getRecords, saveRecords, initRecord, notifyStudentAndParents } from '../components/storageHelpers';
+import { TABS } from '../components/constants';
+import { api } from '../api';
 import TopBar from '../components/TopBar';
 import GlobalSearchPanel from '../components/GlobalSearchPanel';
 import BasicInfoTab from '../components/BasicInfoTab';
@@ -27,54 +27,43 @@ export default function AccountPage({ user, onLogout }) {
   const [gradeFilter,    setGradeFilter]    = useState('');
   const [classFilter,    setClassFilter]    = useState('');
   const [showGlobalSearch, setShowGlobalSearch] = useState(false);
+  const [loading,        setLoading]        = useState(false);
 
   useEffect(() => {
-    const registered = JSON.parse(localStorage.getItem('users') || '[]');
-    const regStudents = registered.filter(u => u.role === 'student');
-    const all = [...MOCK_STUDENTS];
-    regStudents.forEach(s => { if (!all.find(m => m.id === s.id)) all.push(s); });
-    setStudentList(all);
-    if (!isTeacher) {
-      if (user.role === 'student') setSelectedId(user.id);
-      if (isParent) {
-        const pi = registered.find(u => u.role === 'parent' && u.id === user.id);
-        if (pi) { const child = all.find(s => s.name === pi.childName); if (child) setSelectedId(child.id); }
-      }
+    if (isTeacher) {
+      api.getStudents().then(setStudentList).catch(console.error);
+    } else if (user.role === 'student') {
+      setSelectedId(user.id);
+    } else if (isParent) {
+      api.getMyChild().then(({ child }) => {
+        if (child) setSelectedId(child.id);
+      }).catch(console.error);
     }
   }, [user]);
 
   useEffect(() => {
     if (!selectedId) { setRecord(null); return; }
-    const records = getRecords();
-    if (!records[selectedId]) {
-      const info = studentList.find(s => s.id === selectedId) || {};
-      records[selectedId] = initRecord(info);
-    }
-    if (!records[selectedId].feedback)   records[selectedId].feedback   = [];
-    if (!records[selectedId].counseling) records[selectedId].counseling = [];
-    saveRecords(records);
-    setRecord({ ...records[selectedId] });
-    setIsEditing(false);
-  }, [selectedId, studentList]);
+    setLoading(true);
+    api.getRecord(selectedId)
+      .then(data => { setRecord(data); setIsEditing(false); })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [selectedId]);
 
-  const persistRecord = (updated) => {
-    const records = getRecords();
-    records[selectedId] = updated;
-    saveRecords(records);
-    setRecord(updated);
-  };
   const refreshRecord = () => {
-    const records = getRecords();
-    if (records[selectedId]) setRecord({ ...records[selectedId] });
+    if (!selectedId) return;
+    api.getRecord(selectedId).then(setRecord).catch(console.error);
   };
+
   const startEdit  = () => { setDraft(JSON.parse(JSON.stringify(record))); setIsEditing(true); };
   const cancelEdit = () => setIsEditing(false);
-  const saveEdit   = () => {
-    persistRecord(draft);
+  const saveEdit   = async () => {
+    await api.saveRecord(selectedId, draft);
+    setRecord(draft);
     setIsEditing(false);
+    // 알림 생성
     const sn = draft.basicInfo.name;
-    notifyStudentAndParents(selectedId, sn, 'grade', '학생부가 업데이트되었습니다',
-      '학생부 정보가 수정되었습니다.', `자녀(${sn})의 학생부 정보가 수정되었습니다.`);
+    api.createNotification({ userId: selectedId, type: 'grade', title: '학생부가 업데이트되었습니다', message: '학생부 정보가 수정되었습니다.', studentId: selectedId }).catch(() => {});
   };
 
   const cur = isEditing ? draft : record;
@@ -95,7 +84,7 @@ export default function AccountPage({ user, onLogout }) {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
             <h3 style={{ ...s.sectionTitle, marginBottom: 0 }}>학생 목록</h3>
             <button onClick={() => setShowGlobalSearch(v => !v)} style={{
-              ...s.addBtn, background: showGlobalSearch ? '#dbeafe' : '#eff6ff',
+              ...s.addBtn, background: showGlobalSearch ? '#2d2558' : '#1e1b3a',
             }}>
               {showGlobalSearch ? '← 목록으로' : '통합 검색'}
             </button>
@@ -123,14 +112,14 @@ export default function AccountPage({ user, onLogout }) {
               </div>
 
               {filteredStudents.length === 0 ? (
-                <p style={{ color: '#888', fontSize: 14 }}>검색 결과가 없습니다.</p>
+                <p style={{ color: '#8b8fa8', fontSize: 14 }}>검색 결과가 없습니다.</p>
               ) : isMobile ? (
                 <div>
                   {filteredStudents.map(st => (
                     <div key={st.id} style={s.studentCard}>
                       <div>
-                        <div style={{ fontWeight: 'bold', fontSize: 15 }}>{st.name}</div>
-                        <div style={{ fontSize: 13, color: '#6b7280', marginTop: 2 }}>
+                        <div style={{ fontWeight: 'bold', fontSize: 15, color: '#dde0f0' }}>{st.name}</div>
+                        <div style={{ fontSize: 13, color: '#8b8fa8', marginTop: 2 }}>
                           {st.grade ? `${st.grade}학년 ` : ''}{st.classNum ? `${st.classNum}반 ` : ''}{st.studentNumber || ''}
                         </div>
                       </div>
@@ -141,19 +130,19 @@ export default function AccountPage({ user, onLogout }) {
               ) : (
                 <>
                   {(nameSearch || gradeFilter || classFilter) && (
-                    <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 8 }}>
+                    <div style={{ fontSize: 13, color: '#8b8fa8', marginBottom: 8 }}>
                       {filteredStudents.length}명 / 전체 {studentList.length}명
                     </div>
                   )}
                   <table style={s.table}>
                     <thead>
-                      <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
+                      <tr style={{ borderBottom: '2px solid #2d3148' }}>
                         {['이름','학년','반','학번',''].map(h => <th key={h} style={s.th}>{h}</th>)}
                       </tr>
                     </thead>
                     <tbody>
                       {filteredStudents.map(st => (
-                        <tr key={st.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                        <tr key={st.id} style={{ borderBottom: '1px solid #2d3148' }}>
                           <td style={s.td}>{st.name}</td>
                           <td style={s.td}>{st.grade ? `${st.grade}학년` : '-'}</td>
                           <td style={s.td}>{st.classNum ? `${st.classNum}반` : '-'}</td>
@@ -174,11 +163,13 @@ export default function AccountPage({ user, onLogout }) {
     );
   }
 
-  if (!cur) {
+  if (loading || !cur) {
     return (
       <div style={s.page}>
         <TopBar user={user} onLogout={onLogout} isMobile={isMobile} />
-        {!isTeacher && <p style={{ textAlign: 'center', color: '#888', marginTop: 60 }}>학생부 정보가 없습니다.</p>}
+        <p style={{ textAlign: 'center', color: '#8b8fa8', marginTop: 60 }}>
+          {loading ? '불러오는 중...' : '학생부 정보가 없습니다.'}
+        </p>
       </div>
     );
   }
@@ -193,11 +184,11 @@ export default function AccountPage({ user, onLogout }) {
         </div>
       )}
 
-      <div style={{ ...s.card, ...(isMobile ? s.cardMobile : {}), background: '#eff6ff', border: '1px solid #bfdbfe' }}>
+      <div style={{ ...s.card, ...(isMobile ? s.cardMobile : {}), background: '#1e1b3a', border: '1px solid #4a3f8a' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
           <div>
-            <span style={{ fontSize: isMobile ? 17 : 20, fontWeight: 'bold' }}>{cur.basicInfo.name}</span>
-            <span style={{ color: '#6b7280', marginLeft: 10, fontSize: 14 }}>
+            <span style={{ fontSize: isMobile ? 17 : 20, fontWeight: 'bold', color: '#dde0f0' }}>{cur.basicInfo.name}</span>
+            <span style={{ color: '#8b8fa8', marginLeft: 10, fontSize: 14 }}>
               {cur.basicInfo.grade    && `${cur.basicInfo.grade}학년 `}
               {cur.basicInfo.classNum && `${cur.basicInfo.classNum}반 `}
               {cur.basicInfo.studentNumber && `${cur.basicInfo.studentNumber}번`}
@@ -214,15 +205,15 @@ export default function AccountPage({ user, onLogout }) {
       </div>
 
       <div style={{ maxWidth: 900, margin: '0 auto', padding: isMobile ? '0 12px' : '0 20px' }}>
-        <div style={{ display: 'flex', borderBottom: '2px solid #e5e7eb', overflowX: 'auto' }}>
+        <div style={{ display: 'flex', borderBottom: '2px solid #2d3148', overflowX: 'auto' }}>
           {TABS.map(tab => (
             <button key={tab} onClick={() => { setActiveTab(tab); if (isEditing) setIsEditing(false); }} style={{
               padding: isMobile ? '8px 10px' : '10px 20px',
               border: 'none', background: 'none', cursor: 'pointer',
               fontSize: isMobile ? 12 : 14, whiteSpace: 'nowrap',
               fontWeight: activeTab === tab ? 'bold' : 'normal',
-              color: activeTab === tab ? '#2563eb' : '#6b7280',
-              borderBottom: activeTab === tab ? '2px solid #2563eb' : '2px solid transparent',
+              color: activeTab === tab ? '#a89bf7' : '#8b8fa8',
+              borderBottom: activeTab === tab ? '2px solid #7c6af0' : '2px solid transparent',
               marginBottom: -2,
             }}>{tab}</button>
           ))}
@@ -255,11 +246,13 @@ export default function AccountPage({ user, onLogout }) {
         )}
         {activeTab === '피드백' && (
           <FeedbackTab studentId={selectedId} user={user} isTeacher={isTeacher}
-            isStudent={user.role==='student'} isParent={isParent} isMobile={isMobile} onRefresh={refreshRecord} />
+            isStudent={user.role==='student'} isParent={isParent} isMobile={isMobile}
+            feedback={cur.feedback} onRefresh={refreshRecord} />
         )}
         {activeTab === '상담' && (
           <CounselingTab studentId={selectedId} studentName={cur.basicInfo.name}
-            user={user} isTeacher={isTeacher} isMobile={isMobile} onRefresh={refreshRecord} />
+            user={user} isTeacher={isTeacher} isMobile={isMobile}
+            counseling={cur.counseling} onRefresh={refreshRecord} />
         )}
       </div>
     </div>

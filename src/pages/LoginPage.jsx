@@ -1,40 +1,35 @@
 import { useState } from 'react'
-
+import { api } from '../api'
 
 const ROLES = [
-  { id: 'teacher', label: '교사', color: 'blue' },
-  { id: 'student', label: '학생', color: 'green' },
-  { id: 'parent', label: '학부모', color: 'purple' },
+  { id: 'teacher', label: '교사', color: 'indigo' },
+  { id: 'student', label: '학생', color: 'emerald' },
+  { id: 'parent', label: '학부모', color: 'violet' },
 ]
 
 const ROLE_COLORS = {
-  blue: {
-    tab: 'bg-blue-600 text-white',
-    button: 'bg-blue-600 hover:bg-blue-700',
-    ring: 'focus:ring-blue-500',
+  indigo: {
+    button: 'bg-indigo-600 hover:bg-indigo-500',
+    ring: 'focus:ring-indigo-500',
+    selected: '#3730a3',
   },
-  green: {
-    tab: 'bg-green-600 text-white',
-    button: 'bg-green-600 hover:bg-green-700',
-    ring: 'focus:ring-green-500',
+  emerald: {
+    button: 'bg-emerald-600 hover:bg-emerald-500',
+    ring: 'focus:ring-emerald-500',
+    selected: '#065f46',
   },
-  purple: {
-    tab: 'bg-purple-600 text-white',
-    button: 'bg-purple-600 hover:bg-purple-700',
-    ring: 'focus:ring-purple-500',
+  violet: {
+    button: 'bg-violet-600 hover:bg-violet-500',
+    ring: 'focus:ring-violet-500',
+    selected: '#4c1d95',
   },
-}
-
-const MOCK_USERS = {
-  teacher: [{ id: 'teacher01', password: '1234', name: '김선생' }],
-  student: [{ id: 'student01', password: '1234', name: '이학생' }],
-  parent: [{ id: 'parent01', password: '1234', name: '박학부모' }],
 }
 
 export default function LoginPage({ onGoRegister, onLogin }) {
   const [selectedRole, setSelectedRole] = useState('teacher')
   const [form, setForm] = useState({ id: '', password: '' })
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
   const color = ROLE_COLORS[ROLES.find(r => r.id === selectedRole).color]
 
@@ -49,116 +44,104 @@ export default function LoginPage({ onGoRegister, onLogin }) {
     setError('')
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (!form.id.trim() || !form.password.trim()) {
       setError('아이디와 비밀번호를 입력해주세요.')
       return
     }
-
-    const registered = JSON.parse(localStorage.getItem('users') || '[]')
-    const found =
-      registered.find(u => u.role === selectedRole && u.id === form.id && u.password === form.password) ||
-      MOCK_USERS[selectedRole].find(u => u.id === form.id && u.password === form.password)
-
-    if (!found) {
-      setError('아이디 또는 비밀번호가 올바르지 않습니다.')
-      return
+    setLoading(true)
+    try {
+      const { token, user } = await api.login(form.id, form.password, selectedRole)
+      localStorage.setItem('token', token)
+      onLogin(user)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
     }
-
-    onLogin({ id: found.id, name: found.name, role: selectedRole })
   }
 
-  return ( 
-    <div
-      style = {{
-        backgroudnImage : 'url(${bgIamge})',
-        backgroudnsize : 'cover',
-        backgroudposition : 'center',
-        backgroundcolor : "#FFFFFF",
-
-      }}
-    > 
-      <div className = "min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
-        <div className="bg-indigo-600 px-8 py-6 text-white text-center">
-          <h1 className="text-xl font-bold">학생 성적 및 상담 관리 시스템</h1>
-          <p className="text-indigo-200 text-sm mt-1">로그인하여 서비스를 이용하세요</p>
+  return (
+    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-[#0f1117]">
+      <div className="w-full max-w-md overflow-hidden" style={{ background: '#0f1117' }}>
+        <div className="px-8 py-6 text-center">
+          <h1 className="text-xl font-bold text-white">학생 성적 및 상담 관리 시스템</h1>
         </div>
 
         <div className="px-8 py-6">
-          <div className="flex rounded-lg overflow-hidden border border-gray-200 mb-6">
-            {ROLES.map((role) => (
-              <button
-                key={role.id}
-                onClick={() => handleRoleChange(role.id)}
-                className={`flex-1 py-2 text-sm font-medium transition-colors ${
-                  selectedRole === role.id
-                    ? ROLE_COLORS[role.color].tab
-                    : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
-                }`}
-              >
-                {role.icon} {role.label}
-              </button>
-            ))}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-[#8b8fa8] mb-1">역할 선택</label>
+            <div className="border border-[#2d3148]" style={{ background: '#1a1d2e' }}>
+              {ROLES.map((role, idx) => (
+                <button
+                  key={role.id}
+                  onClick={() => handleRoleChange(role.id)}
+                  className="w-full text-left px-4 py-2.5 text-sm font-medium transition-colors"
+                  style={{
+                    background: selectedRole === role.id ? ROLE_COLORS[role.color].selected : '#1a1d2e',
+                    color: selectedRole === role.id ? '#fff' : '#8b8fa8',
+                    borderBottom: idx < ROLES.length - 1 ? '1px solid #2d3148' : 'none',
+                  }}
+                >
+                  {role.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">아이디</label>
+              <label className="block text-sm font-medium text-[#8b8fa8] mb-1">아이디</label>
               <input
                 type="text"
                 name="id"
                 value={form.id}
                 onChange={handleChange}
                 placeholder={`${ROLES.find(r => r.id === selectedRole).label} 아이디`}
-                className={`w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-2 ${color.ring} focus:border-transparent`}
+                className={`w-full px-4 py-2.5 text-sm outline-none focus:ring-2 ${color.ring} focus:border-transparent`}
+                style={{ background: '#1a1d2e', border: '1px solid #2d3148', color: '#dde0f0' }}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">비밀번호</label>
+              <label className="block text-sm font-medium text-[#8b8fa8] mb-1">비밀번호</label>
               <input
                 type="password"
                 name="password"
                 value={form.password}
                 onChange={handleChange}
                 placeholder="비밀번호"
-                className={`w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-2 ${color.ring} focus:border-transparent`}
+                className={`w-full px-4 py-2.5 text-sm outline-none focus:ring-2 ${color.ring} focus:border-transparent`}
+                style={{ background: '#1a1d2e', border: '1px solid #2d3148', color: '#dde0f0' }}
               />
             </div>
 
             {error && (
-              <p className="text-red-500 text-sm bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+              <p className="text-red-400 text-sm px-3 py-2" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)' }}>
                 {error}
               </p>
             )}
 
             <button
               type="submit"
-              className={`w-full ${color.button} text-white font-semibold py-2.5 rounded-lg transition-colors`}
+              disabled={loading}
+              className={`w-full ${color.button} text-white font-semibold py-2.5 transition-colors disabled:opacity-60`}
             >
-              로그인
+              {loading ? '로그인 중...' : '로그인'}
             </button>
           </form>
 
-          <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200"> 나중에 지우기(테스트 계정)
-            <p className="text-xs text-gray-400">아이디: teacher01 / student01 / parent01</p>
-            <p className="text-xs text-gray-400">비밀번호: 1234</p>
-          </div>
-
-          <p className="text-center text-sm text-gray-500 mt-4">
-            계정이 없으신가요?{' '}
+          <p className="text-center text-sm mt-4">
             <button
               onClick={onGoRegister}
-              className="text-indigo-600 font-semibold hover:underline"
+              className="text-[#a89bf7] font-semibold hover:underline"
             >
               회원가입
             </button>
           </p>
         </div>
       </div>
-    </div>
     </div>
   )
 }

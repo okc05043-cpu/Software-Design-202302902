@@ -19,7 +19,7 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div style={{ minHeight: '100vh', background: '#0f1117' }}>
       {page === 'login' && <LoginPage onGoRegister={() => setPage('register')} onLogin={handleLogin} />}
       {page === 'register' && <RegisterPage onGoLogin={() => setPage('login')} />}
       {page === 'account' && <AccountPage user={user} onLogout={handleLogout} />}
