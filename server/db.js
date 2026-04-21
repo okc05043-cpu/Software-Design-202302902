@@ -6,6 +6,7 @@ const pool = mysql.createPool({
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
   waitForConnections: true,
   connectionLimit: 10,
+  multipleStatements: true,
 });
 
 module.exports = pool;
