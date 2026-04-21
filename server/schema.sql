@@ -66,17 +66,3 @@ CREATE TABLE IF NOT EXISTS notifications (
   is_read BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP DEFAULT NOW()
 );
-
--- 기본 학생 데이터 삽입 (이미 있으면 무시)
-INSERT IGNORE INTO users (id, role, password, name, grade, class_num, student_number)
-VALUES ('student01', 'student', '$2a$10$placeholder', '이학생', '1', '1', '20241001');
-
-INSERT IGNORE INTO student_records (student_id, basic_info, subjects, attendance, notes, custom_fields)
-VALUES (
-  'student01',
-  '{"name":"이학생","grade":"1","classNum":"1","studentNumber":"20241001"}',
-  '[{"name":"국어","score":0},{"name":"영어","score":0},{"name":"수학","score":0},{"name":"과학","score":0},{"name":"사회","score":0}]',
-  '{"present":0,"absent":0,"late":0,"earlyLeave":0}',
-  '',
-  '[{"id":"health","label":"건강상태","value":""},{"id":"hobby","label":"특기/취미","value":""}]'
-);
