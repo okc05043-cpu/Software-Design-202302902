@@ -2,9 +2,9 @@ import { useState } from 'react'
 import { api } from '../api'
 
 const ROLES = [
+  { id: 'student', label: '학생', color: 'indigo' },
+  { id: 'parent', label: '학부모', color: 'indigo' },
   { id: 'teacher', label: '교사', color: 'indigo' },
-  { id: 'student', label: '학생', color: 'emerald' },
-  { id: 'parent', label: '학부모', color: 'violet' },
 ]
 
 const ROLE_COLORS = {
@@ -26,7 +26,7 @@ const ROLE_COLORS = {
 }
 
 export default function LoginPage({ onGoRegister, onLogin }) {
-  const [selectedRole, setSelectedRole] = useState('teacher')
+  const [selectedRole, setSelectedRole] = useState('student')
   const [form, setForm] = useState({ id: '', password: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -71,7 +71,6 @@ export default function LoginPage({ onGoRegister, onLogin }) {
 
         <div className="px-8 py-6">
           <div className="mb-6">
-            <label className="block text-sm font-medium text-[#8b8fa8] mb-1">역할 선택</label>
             <div className="border border-[#2d3148]" style={{ background: '#1a1d2e' }}>
               {ROLES.map((role, idx) => (
                 <button
