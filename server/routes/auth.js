@@ -6,11 +6,6 @@ const pool = require('../db');
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_key';
 
-const MOCK_USERS = {
-  teacher: [{ id: 'teacher01', password: '1234', name: '김선생', role: 'teacher' }],
-  student: [{ id: 'student01', password: '1234', name: '이학생', role: 'student' }],
-  parent:  [{ id: 'parent01',  password: '1234', name: '박학부모', role: 'parent' }],
-};
 
 // 로그인
 router.post('/login', async (req, res) => {
@@ -29,11 +24,8 @@ router.post('/login', async (req, res) => {
       const dbUser = rows[0];
       const match = await bcrypt.compare(password, dbUser.password);
       if (match) user = { id: dbUser.id, name: dbUser.name, role: dbUser.role };
-    } else {
-      const mock = MOCK_USERS[role]?.find(u => u.id === id && u.password === password);
-      if (mock) user = { id: mock.id, name: mock.name, role: mock.role };
-    }
-
+    } 
+    
     if (!user) return res.status(401).json({ error: '아이디 또는 비밀번호가 올바르지 않습니다.' });
 
     const token = jwt.sign(user, JWT_SECRET, { expiresIn: '7d' });
