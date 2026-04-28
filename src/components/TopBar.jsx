@@ -10,7 +10,6 @@ export default function TopBar({ user, onLogout, isMobile }) {
           {isMobile ? '학생 관리 시스템' : '학생 성적 및 상담 관리 시스템'}
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {!isMobile && <span style={{ fontSize: 13, color: '#8b8fa8' }}>{user.name} ({roleLabel})</span>}
           <NotificationBell userId={user.id} isMobile={isMobile} />
           <button onClick={onLogout} style={{
             padding: '6px 12px', background: '#252836', color: '#b0b4cc',

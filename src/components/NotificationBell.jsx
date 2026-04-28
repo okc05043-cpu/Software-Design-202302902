@@ -41,7 +41,7 @@ export default function NotificationBell({ userId, isMobile }) {
         position: 'relative', background: 'rgba(124,106,240,0.2)', border: '1px solid rgba(124,106,240,0.3)',
         borderRadius: 8, padding: '5px 9px', cursor: 'pointer', color: '#a89bf7', fontSize: 16, lineHeight: 1,
       }}>
-        🔔
+        알림
         {unread > 0 && (
           <span style={{
             position: 'absolute', top: -3, right: -3, background: '#ef4444', color: 'white',
