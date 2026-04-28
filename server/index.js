@@ -41,6 +41,7 @@ app.use('/api/students',      require('./routes/students'));
 app.use('/api/feedback',      require('./routes/feedback'));
 app.use('/api/counseling',    require('./routes/counseling'));
 app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/schools',       require('./routes/schools'));
 
 // 학부모 자녀 조회 (childName으로 학생 찾기)
 app.get('/api/my-child', async (req, res) => {

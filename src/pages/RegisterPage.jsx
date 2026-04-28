@@ -1,20 +1,13 @@
 import { useState } from 'react'
 import { api } from '../api'
 
-const NEIS_KEY = import.meta.env.VITE_NEIS_API_KEY
 const SCHOOL_TYPES = ['초등학교', '중학교', '고등학교']
 
 async function searchSchools(type, name) {
-  const url = `https://open.neis.go.kr/hub/schoolInfo?KEY=${NEIS_KEY}&Type=json&SCHUL_KND_SC_NM=${encodeURIComponent(type)}&SCHUL_NM=${encodeURIComponent(name)}&pSize=10`
-  const res = await fetch(url)
-  const text = await res.text()
-  if (!text || !text.trim()) return []
-  try {
-    const data = JSON.parse(text)
-    return data.schoolInfo?.[1]?.row ?? []
-  } catch {
-    return []
-  }
+  const base = import.meta.env.VITE_API_URL || '/api'
+  const res = await fetch(`${base}/schools/search?type=${encodeURIComponent(type)}&name=${encodeURIComponent(name)}`)
+  if (!res.ok) return []
+  return res.json()
 }
 
 const ROLES = [
