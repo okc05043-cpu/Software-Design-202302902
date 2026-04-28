@@ -86,7 +86,7 @@ router.post('/login', async (req, res) => {
 
     if (!user) return res.status(401).json({ error: '아이디 또는 비밀번호가 올바르지 않습니다.' });
 
-    const token = jwt.sign(user, JWT_SECRET, { expiresIn: '1d' });
+    const token = jwt.sign(user, JWT_SECRET, { expiresIn: '20m' });
     res.json({ token, user });
   } catch (err) {
     console.error(err);
@@ -128,7 +128,7 @@ router.post('/register', async (req, res) => {
       );
     }
 
-    const token = jwt.sign({ id, name, role }, JWT_SECRET, { expiresIn: '1d' });
+    const token = jwt.sign({ id, name, role }, JWT_SECRET, { expiresIn: '20m' });
     res.json({ token, user: { id, name, role } });
   } catch (err) {
     console.error(err);
