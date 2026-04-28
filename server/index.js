@@ -29,7 +29,13 @@ const swaggerSpec = swaggerJsdoc(swaggerOptions);
 
 const app = express();
 app.use(cors({
-  origin: ['https://software.up.railway.app', 'http://localhost:5173'],
+  origin: (origin, cb) => {
+    if (!origin || origin.startsWith('http://localhost:') || origin === 'https://software.up.railway.app') {
+      cb(null, true);
+    } else {
+      cb(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
 }));
 app.use(express.json());
