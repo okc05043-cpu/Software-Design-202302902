@@ -28,6 +28,9 @@ export default function AccountPage({ user, onLogout }) {
   const [classFilter,    setClassFilter]    = useState('');
   const [showGlobalSearch, setShowGlobalSearch] = useState(false);
   const [loading,        setLoading]        = useState(false);
+  const [attendanceEditMode, setAttendanceEditMode] = useState(false);
+  const [absentIds,      setAbsentIds]      = useState(new Set());
+  const [attendanceSaving, setAttendanceSaving] = useState(false);
 
   useEffect(() => {
     if (isTeacher) {
@@ -66,6 +69,36 @@ export default function AccountPage({ user, onLogout }) {
     api.createNotification({ userId: selectedId, type: 'grade', title: '학생부가 업데이트되었습니다', message: '학생부 정보가 수정되었습니다.', studentId: selectedId }).catch(() => {});
   };
 
+  const handleQuickAttendance = async (studentId) => {
+    try {
+      const rec = await api.getRecord(studentId);
+      const updated = { ...rec, attendance: { ...rec.attendance, present: (rec.attendance.present || 0) + 1 } };
+      await api.saveRecord(studentId, updated);
+    } catch (e) { console.error(e); }
+  };
+
+  const handleBulkAttendance = async () => {
+    setAttendanceSaving(true);
+    try {
+      await Promise.all(filteredStudents.map(async (st) => {
+        const rec = await api.getRecord(st.id);
+        const isAbsent = absentIds.has(st.id);
+        const updated = {
+          ...rec,
+          attendance: {
+            ...rec.attendance,
+            present: isAbsent ? rec.attendance.present : (rec.attendance.present || 0) + 1,
+            absent:  isAbsent ? (rec.attendance.absent  || 0) + 1 : rec.attendance.absent,
+          }
+        };
+        await api.saveRecord(st.id, updated);
+      }));
+      setAttendanceEditMode(false);
+      setAbsentIds(new Set());
+    } catch (e) { console.error(e); }
+    finally { setAttendanceSaving(false); }
+  };
+
   const cur = isEditing ? draft : record;
   const isInfoTab = ['기본정보', '성적', '출결', '특기사항'].includes(activeTab);
 
@@ -83,11 +116,27 @@ export default function AccountPage({ user, onLogout }) {
         <div style={{ ...s.card, ...(isMobile ? s.cardMobile : {}) }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
             <h3 style={{ ...s.sectionTitle, marginBottom: 0 }}>학생 목록</h3>
-            <button onClick={() => setShowGlobalSearch(v => !v)} style={{
-              ...s.addBtn, background: showGlobalSearch ? '#2d2558' : '#1e1b3a',
-            }}>
-              {showGlobalSearch ? '← 목록으로' : '통합 검색'}
-            </button>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {!showGlobalSearch && (
+                attendanceEditMode ? (
+                  <>
+                    <button onClick={handleBulkAttendance} disabled={attendanceSaving} style={{ ...s.addBtn, background: '#1a3a2a', color: '#4ade80', borderColor: '#2d6a4f' }}>
+                      {attendanceSaving ? '저장 중...' : '적용'}
+                    </button>
+                    <button onClick={() => { setAttendanceEditMode(false); setAbsentIds(new Set()); }} style={s.cancelBtn}>취소</button>
+                  </>
+                ) : (
+                  <button onClick={() => setAttendanceEditMode(true)} style={{ ...s.addBtn, background: '#1a2a3a', color: '#60a5fa', borderColor: '#1e4a7a' }}>
+                    출석편집
+                  </button>
+                )
+              )}
+              <button onClick={() => { setShowGlobalSearch(v => !v); setAttendanceEditMode(false); setAbsentIds(new Set()); }} style={{
+                ...s.addBtn, background: showGlobalSearch ? '#2d2558' : '#1e1b3a',
+              }}>
+                {showGlobalSearch ? '← 목록으로' : '통합 검색'}
+              </button>
+            </div>
           </div>
 
           {!showGlobalSearch ? (
@@ -123,7 +172,10 @@ export default function AccountPage({ user, onLogout }) {
                           {st.grade ? `${st.grade}학년 ` : ''}{st.classNum ? `${st.classNum}반 ` : ''}{st.studentNumber || ''}
                         </div>
                       </div>
-                      <button onClick={() => setSelectedId(st.id)} style={s.smallBtn}>학생부 보기</button>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button onClick={() => setSelectedId(st.id)} style={s.smallBtn}>학생부 보기</button>
+                        <button onClick={() => handleQuickAttendance(st.id)} style={{ ...s.smallBtn, background: '#1a3a2a', color: '#4ade80', border: '1px solid #2d6a4f' }}>출석</button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -138,16 +190,39 @@ export default function AccountPage({ user, onLogout }) {
                     <thead>
                       <tr style={{ borderBottom: '2px solid #2d3148' }}>
                         {['이름','학년','반','학번',''].map(h => <th key={h} style={s.th}>{h}</th>)}
+                        {attendanceEditMode && <th style={{ ...s.th, color: '#f87171' }}>결석</th>}
                       </tr>
                     </thead>
                     <tbody>
                       {filteredStudents.map(st => (
-                        <tr key={st.id} style={{ borderBottom: '1px solid #2d3148' }}>
+                        <tr key={st.id} style={{ borderBottom: '1px solid #2d3148', background: attendanceEditMode && absentIds.has(st.id) ? '#2a1a1a' : 'transparent' }}>
                           <td style={s.td}>{st.name}</td>
                           <td style={s.td}>{st.grade ? `${st.grade}학년` : '-'}</td>
                           <td style={s.td}>{st.classNum ? `${st.classNum}반` : '-'}</td>
                           <td style={s.td}>{st.studentNumber || '-'}</td>
-                          <td style={s.td}><button onClick={() => setSelectedId(st.id)} style={s.smallBtn}>학생부 보기</button></td>
+                          <td style={s.td}>
+                            <div style={{ display: 'flex', gap: 6 }}>
+                              <button onClick={() => setSelectedId(st.id)} style={s.smallBtn}>학생부 보기</button>
+                              {!attendanceEditMode && (
+                                <button onClick={() => handleQuickAttendance(st.id)} style={{ ...s.smallBtn, background: '#1a3a2a', color: '#4ade80', border: '1px solid #2d6a4f' }}>출석</button>
+                              )}
+                            </div>
+                          </td>
+                          {attendanceEditMode && (
+                            <td style={s.td}>
+                              <input type="checkbox"
+                                checked={absentIds.has(st.id)}
+                                onChange={e => {
+                                  setAbsentIds(prev => {
+                                    const next = new Set(prev);
+                                    e.target.checked ? next.add(st.id) : next.delete(st.id);
+                                    return next;
+                                  });
+                                }}
+                                style={{ width: 18, height: 18, cursor: 'pointer', accentColor: '#ef4444' }}
+                              />
+                            </td>
+                          )}
                         </tr>
                       ))}
                     </tbody>
