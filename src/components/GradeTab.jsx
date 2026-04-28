@@ -49,7 +49,7 @@ export default function GradeTab({ subjects, isEditing, isTeacher, onScoreChange
         </div>
       </div>
       <div style={{ flex: 1, minWidth: 260, height: 300 }}>
-        <h3 style={s.sectionTitle}>역량 시각화</h3>
+
         <ResponsiveContainer width="100%" height="100%">
           <RadarChart data={subjects}>
             <PolarGrid stroke="#363a52" />
