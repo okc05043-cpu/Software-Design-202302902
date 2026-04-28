@@ -70,15 +70,26 @@ export default function AccountPage({ user, onLogout }) {
     api.createNotification({ userId: selectedId, type: 'grade', title: '학생부가 업데이트되었습니다', message: '학생부 정보가 수정되었습니다.', studentId: selectedId }).catch(() => {});
   };
 
+  const todayStr = () => new Date().toISOString().slice(0, 10);
+  const attendKey = (id) => `attend_${id}_${todayStr()}`;
+
   const handleQuickAttendance = async (studentId) => {
-    const today = new Date().toISOString().slice(0, 10);
-    const key = `attend_${studentId}_${today}`;
-    if (localStorage.getItem(key)) return;
+    const key = attendKey(studentId);
+    const status = localStorage.getItem(key);
+    if (status === '1') return;
     setAttendClicked(prev => new Set(prev).add(studentId));
     setTimeout(() => setAttendClicked(prev => { const n = new Set(prev); n.delete(studentId); return n; }), 800);
     try {
       const rec = await api.getRecord(studentId);
-      const updated = { ...rec, attendance: { ...rec.attendance, present: (rec.attendance.present || 0) + 1 } };
+      const att = rec.attendance;
+      const updated = {
+        ...rec,
+        attendance: {
+          ...att,
+          present: (att.present || 0) + 1,
+          absent:  status === 'absent' ? Math.max(0, (att.absent || 0) - 1) : att.absent,
+        }
+      };
       await api.saveRecord(studentId, updated);
       localStorage.setItem(key, '1');
     } catch (e) { console.error(e); }
@@ -88,17 +99,34 @@ export default function AccountPage({ user, onLogout }) {
     setAttendanceSaving(true);
     try {
       await Promise.all(filteredStudents.map(async (st) => {
-        const rec = await api.getRecord(st.id);
+        const key = attendKey(st.id);
+        const status = localStorage.getItem(key);
         const isAbsent = absentIds.has(st.id);
-        const updated = {
-          ...rec,
-          attendance: {
-            ...rec.attendance,
-            present: isAbsent ? rec.attendance.present : (rec.attendance.present || 0) + 1,
-            absent:  isAbsent ? (rec.attendance.absent  || 0) + 1 : rec.attendance.absent,
-          }
-        };
-        await api.saveRecord(st.id, updated);
+        if (isAbsent && status === '1') {
+          // 오늘 출석했는데 결석으로 변경
+          const rec = await api.getRecord(st.id);
+          const att = rec.attendance;
+          await api.saveRecord(st.id, { ...rec, attendance: { ...att, present: Math.max(0, (att.present||0)-1), absent: (att.absent||0)+1 } });
+          localStorage.setItem(key, 'absent');
+        } else if (!isAbsent && status === 'absent') {
+          // 오늘 결석했는데 출석으로 변경
+          const rec = await api.getRecord(st.id);
+          const att = rec.attendance;
+          await api.saveRecord(st.id, { ...rec, attendance: { ...att, present: (att.present||0)+1, absent: Math.max(0,(att.absent||0)-1) } });
+          localStorage.setItem(key, '1');
+        } else if (!isAbsent && !status) {
+          // 오늘 미처리 → 출석
+          const rec = await api.getRecord(st.id);
+          const att = rec.attendance;
+          await api.saveRecord(st.id, { ...rec, attendance: { ...att, present: (att.present||0)+1 } });
+          localStorage.setItem(key, '1');
+        } else if (isAbsent && !status) {
+          // 오늘 미처리 → 결석
+          const rec = await api.getRecord(st.id);
+          const att = rec.attendance;
+          await api.saveRecord(st.id, { ...rec, attendance: { ...att, absent: (att.absent||0)+1 } });
+          localStorage.setItem(key, 'absent');
+        }
       }));
       setAttendanceEditMode(false);
       setAbsentIds(new Set());
@@ -181,8 +209,16 @@ export default function AccountPage({ user, onLogout }) {
                       </div>
                       <div style={{ display: 'flex', gap: 6 }}>
                         <button onClick={() => setSelectedId(st.id)} style={s.smallBtn}>학생부 보기</button>
-                        <button onClick={() => handleQuickAttendance(st.id)} style={{ ...s.smallBtn, background: attendClicked.has(st.id) ? '#4ade80' : '#1a3a2a', color: attendClicked.has(st.id) ? '#0f2a1a' : '#4ade80', border: '1px solid #2d6a4f', transform: attendClicked.has(st.id) ? 'scale(0.93)' : 'scale(1)', transition: 'all 0.15s' }}>
-                                {attendClicked.has(st.id) ? '✓' : (localStorage.getItem(`attend_${st.id}_${new Date().toISOString().slice(0,10)}`) ? '완료' : '출석')}</button>
+                        <button onClick={() => handleQuickAttendance(st.id)} style={{ ...s.smallBtn,
+                                  background: attendClicked.has(st.id) ? '#4ade80' : localStorage.getItem(attendKey(st.id)) === '1' ? '#2d3a2d' : '#1a3a2a',
+                                  color: attendClicked.has(st.id) ? '#0f2a1a' : '#4ade80',
+                                  border: '1px solid #2d6a4f',
+                                  opacity: localStorage.getItem(attendKey(st.id)) === '1' ? 0.5 : 1,
+                                  transform: attendClicked.has(st.id) ? 'scale(0.93)' : 'scale(1)',
+                                  transition: 'all 0.15s',
+                                  cursor: localStorage.getItem(attendKey(st.id)) === '1' ? 'default' : 'pointer',
+                                }}>
+                                {attendClicked.has(st.id) ? '✓' : localStorage.getItem(attendKey(st.id)) === '1' ? '완료' : '출석'}</button>
                       </div>
                     </div>
                   ))}
@@ -212,8 +248,16 @@ export default function AccountPage({ user, onLogout }) {
                             <div style={{ display: 'flex', gap: 6 }}>
                               <button onClick={() => setSelectedId(st.id)} style={s.smallBtn}>학생부 보기</button>
                               {!attendanceEditMode && (
-                                <button onClick={() => handleQuickAttendance(st.id)} style={{ ...s.smallBtn, background: attendClicked.has(st.id) ? '#4ade80' : '#1a3a2a', color: attendClicked.has(st.id) ? '#0f2a1a' : '#4ade80', border: '1px solid #2d6a4f', transform: attendClicked.has(st.id) ? 'scale(0.93)' : 'scale(1)', transition: 'all 0.15s' }}>
-                                {attendClicked.has(st.id) ? '✓' : (localStorage.getItem(`attend_${st.id}_${new Date().toISOString().slice(0,10)}`) ? '완료' : '출석')}</button>
+                                <button onClick={() => handleQuickAttendance(st.id)} style={{ ...s.smallBtn,
+                                  background: attendClicked.has(st.id) ? '#4ade80' : localStorage.getItem(attendKey(st.id)) === '1' ? '#2d3a2d' : '#1a3a2a',
+                                  color: attendClicked.has(st.id) ? '#0f2a1a' : '#4ade80',
+                                  border: '1px solid #2d6a4f',
+                                  opacity: localStorage.getItem(attendKey(st.id)) === '1' ? 0.5 : 1,
+                                  transform: attendClicked.has(st.id) ? 'scale(0.93)' : 'scale(1)',
+                                  transition: 'all 0.15s',
+                                  cursor: localStorage.getItem(attendKey(st.id)) === '1' ? 'default' : 'pointer',
+                                }}>
+                                {attendClicked.has(st.id) ? '✓' : localStorage.getItem(attendKey(st.id)) === '1' ? '완료' : '출석'}</button>
                               )}
                             </div>
                           </td>
