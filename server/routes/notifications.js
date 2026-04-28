@@ -5,6 +5,57 @@ const authMiddleware = require('../middleware/auth');
 const router = express.Router();
 router.use(authMiddleware);
 
+/**
+ * @swagger
+ * tags:
+ *   name: 알림
+ *   description: 알림 조회 및 읽음 처리
+ *
+ * /api/notifications:
+ *   get:
+ *     summary: 내 알림 조회
+ *     tags: [알림]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: 알림 목록 반환
+ *   post:
+ *     summary: 알림 생성
+ *     tags: [알림]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: 생성 성공
+ *
+ * /api/notifications/{id}/read:
+ *   patch:
+ *     summary: 알림 읽음 처리
+ *     tags: [알림]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 읽음 처리 성공
+ *
+ * /api/notifications/read-all:
+ *   patch:
+ *     summary: 전체 알림 읽음 처리
+ *     tags: [알림]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: 전체 읽음 처리 성공
+ */
+
 // 내 알림 조회
 router.get('/', async (req, res) => {
   try {

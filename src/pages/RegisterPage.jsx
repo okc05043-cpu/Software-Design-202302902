@@ -1,6 +1,22 @@
 import { useState } from 'react'
 import { api } from '../api'
 
+const NEIS_KEY = import.meta.env.VITE_NEIS_API_KEY
+const SCHOOL_TYPES = ['초등학교', '중학교', '고등학교']
+
+async function searchSchools(type, name) {
+  const url = `https://open.neis.go.kr/hub/schoolInfo?KEY=${NEIS_KEY}&Type=json&SCHUL_KND_SC_NM=${encodeURIComponent(type)}&SCHUL_NM=${encodeURIComponent(name)}&pSize=10`
+  const res = await fetch(url)
+  const text = await res.text()
+  if (!text || !text.trim()) return []
+  try {
+    const data = JSON.parse(text)
+    return data.schoolInfo?.[1]?.row ?? []
+  } catch {
+    return []
+  }
+}
+
 const ROLES = [
   { id: 'teacher', label: '교사', color: 'indigo' },
   { id: 'student', label: '학생', color: 'emerald' },
@@ -34,10 +50,33 @@ export default function RegisterPage({ onGoLogin }) {
     subject: '', employeeNumber: '',
     grade: '', classNum: '', studentNumber: '',
     childName: '', childGrade: '', childClass: '',
+    schoolType: '고등학교', schoolName: '',
   })
   const [errors, setErrors] = useState({})
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [schoolSearch, setSchoolSearch] = useState('')
+  const [schoolResults, setSchoolResults] = useState([])
+  const [schoolLoading, setSchoolLoading] = useState(false)
+
+  const handleSchoolSearch = async () => {
+    if (!schoolSearch.trim()) return
+    setSchoolLoading(true)
+    try {
+      const results = await searchSchools(form.schoolType, schoolSearch)
+      setSchoolResults(results)
+    } catch {
+      setSchoolResults([])
+    } finally {
+      setSchoolLoading(false)
+    }
+  }
+
+  const handleSchoolSelect = (school) => {
+    setForm(prev => ({ ...prev, schoolName: school.SCHUL_NM }))
+    setSchoolResults([])
+    setSchoolSearch(school.SCHUL_NM)
+  }
 
   const color = ROLE_COLORS[ROLES.find(r => r.id === selectedRole).color]
 
@@ -145,6 +184,44 @@ export default function RegisterPage({ onGoLogin }) {
             <Field label="이름" error={errors.name}>
               <input type="text" name="name" value={form.name} onChange={handleChange}
                 placeholder="실명을 입력하세요" className={inputClass(color.ring, errors.name)} />
+            </Field>
+
+            <Field label="학교 종류">
+              <select name="schoolType" value={form.schoolType} onChange={handleChange}
+                className={inputClass(color.ring, false)}>
+                {SCHOOL_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </Field>
+
+            <Field label="학교 검색">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={schoolSearch}
+                  onChange={e => setSchoolSearch(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleSchoolSearch())}
+                  placeholder="학교명 입력 후 검색"
+                  className={inputClass(color.ring, false)}
+                />
+                <button type="button" onClick={handleSchoolSearch} disabled={schoolLoading}
+                  className="px-3 py-2 text-sm text-white bg-[#7c6af0] hover:bg-[#6a59d4] disabled:opacity-50 whitespace-nowrap">
+                  {schoolLoading ? '...' : '검색'}
+                </button>
+              </div>
+              {schoolResults.length > 0 && (
+                <div className="mt-1 border border-[#2d3148] max-h-40 overflow-y-auto" style={{ background: '#1a1d2e' }}>
+                  {schoolResults.map(s => (
+                    <button key={s.SD_SCHUL_CODE} type="button" onClick={() => handleSchoolSelect(s)}
+                      className="w-full text-left px-3 py-2 text-sm text-[#dde0f0] hover:bg-[#2d3148] border-b border-[#2d3148] last:border-0">
+                      {s.SCHUL_NM}
+                      <span className="text-[#8b8fa8] text-xs ml-2">{s.ORG_RDNMA}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {form.schoolName && (
+                <p className="text-xs text-emerald-400 mt-1">선택됨: {form.schoolName}</p>
+              )}
             </Field>
 
             <Field label="아이디" error={errors.id}>

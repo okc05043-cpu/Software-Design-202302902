@@ -5,6 +5,58 @@ const authMiddleware = require('../middleware/auth');
 const router = express.Router();
 router.use(authMiddleware);
 
+/**
+ * @swagger
+ * tags:
+ *   name: 상담
+ *   description: 학생 상담 관리
+ *
+ * /api/counseling/{studentId}:
+ *   post:
+ *     summary: 상담 추가 (교사 전용)
+ *     tags: [상담]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: studentId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               date:
+ *                 type: string
+ *                 example: "2024-04-21"
+ *               content:
+ *                 type: string
+ *               nextPlan:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: 상담 추가 성공
+ *
+ * /api/counseling/{id}:
+ *   delete:
+ *     summary: 상담 삭제 (교사 전용)
+ *     tags: [상담]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 삭제 성공
+ */
+
 // 상담 추가
 router.post('/:studentId', async (req, res) => {
   if (req.user.role !== 'teacher') return res.status(403).json({ error: '권한이 없습니다.' });

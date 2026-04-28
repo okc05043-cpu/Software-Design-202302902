@@ -3,6 +3,29 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const pool = require('./db');
+const swaggerUi = require('swagger-ui-express');
+const swaggerJsdoc = require('swagger-jsdoc');
+
+const swaggerOptions = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: '학생 상담 관리 API',
+      version: '1.0.0',
+    },
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+        },
+      },
+    },
+  },
+  apis: ['./routes/*.js'],
+};
+const swaggerSpec = swaggerJsdoc(swaggerOptions);
 
 const app = express();
 app.use(cors({
@@ -10,6 +33,7 @@ app.use(cors({
   credentials: true,
 }));
 app.use(express.json());
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // API 라우터
 app.use('/api/auth',          require('./routes/auth'));

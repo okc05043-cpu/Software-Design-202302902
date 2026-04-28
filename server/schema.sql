@@ -12,6 +12,8 @@ CREATE TABLE IF NOT EXISTS users (
   child_name VARCHAR(100),
   child_grade VARCHAR(10),
   child_class VARCHAR(10),
+  school_name VARCHAR(200),
+  school_type VARCHAR(20),
   created_at TIMESTAMP DEFAULT NOW(),
   PRIMARY KEY (id, role)
 );
@@ -65,4 +67,22 @@ CREATE TABLE IF NOT EXISTS notifications (
   student_id VARCHAR(100),
   is_read BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- school_name, school_type 컬럼 추가 (이미 있으면 무시)
+ALTER IGNORE TABLE users ADD COLUMN school_name VARCHAR(200);
+ALTER IGNORE TABLE users ADD COLUMN school_type VARCHAR(20);
+
+-- 기본 학생 데이터 삽입 (이미 있으면 무시)
+INSERT IGNORE INTO users (id, role, password, name, grade, class_num, student_number)
+VALUES ('student01', 'student', '$2a$10$placeholder', '이학생', '1', '1', '20241001');
+
+INSERT IGNORE INTO student_records (student_id, basic_info, subjects, attendance, notes, custom_fields)
+VALUES (
+  'student01',
+  '{"name":"이학생","grade":"1","classNum":"1","studentNumber":"20241001"}',
+  '[{"name":"국어","score":0},{"name":"영어","score":0},{"name":"수학","score":0},{"name":"과학","score":0},{"name":"사회","score":0}]',
+  '{"present":0,"absent":0,"late":0,"earlyLeave":0}',
+  '',
+  '[{"id":"health","label":"건강상태","value":""},{"id":"hobby","label":"특기/취미","value":""}]'
 );

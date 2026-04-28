@@ -5,6 +5,55 @@ const authMiddleware = require('../middleware/auth');
 const router = express.Router();
 router.use(authMiddleware);
 
+/**
+ * @swagger
+ * tags:
+ *   name: 학생
+ *   description: 학생 목록 및 레코드 관리
+ *
+ * /api/students:
+ *   get:
+ *     summary: 학생 목록 조회 (교사 전용)
+ *     tags: [학생]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: 학생 목록 반환
+ *       403:
+ *         description: 권한 없음
+ *
+ * /api/students/{studentId}/record:
+ *   get:
+ *     summary: 학생 레코드 조회
+ *     tags: [학생]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: studentId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 학생 레코드 반환
+ *   put:
+ *     summary: 학생 레코드 저장 (교사 전용)
+ *     tags: [학생]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: studentId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 저장 성공
+ */
+
 // 학생 목록 조회 (교사용)
 router.get('/', async (req, res) => {
   if (req.user.role !== 'teacher') return res.status(403).json({ error: '권한이 없습니다.' });
@@ -29,6 +78,8 @@ router.get('/:studentId/record', async (req, res) => {
 
   try {
     let [rows] = await pool.query('SELECT * FROM student_records WHERE student_id = ?', [studentId]);
+    const [userRows2] = await pool.query('SELECT school_name FROM users WHERE id = ? AND role = ?', [studentId, 'student']);
+    const schoolName = userRows2[0]?.school_name || null;
 
     if (rows.length === 0) {
       const [userRows] = await pool.query('SELECT * FROM users WHERE id = ? AND role = ?', [studentId, 'student']);
@@ -61,6 +112,7 @@ router.get('/:studentId/record', async (req, res) => {
       attendance: typeof row.attendance === 'string' ? JSON.parse(row.attendance) : row.attendance,
       notes: row.notes,
       customFields: typeof row.custom_fields === 'string' ? JSON.parse(row.custom_fields) : row.custom_fields,
+      schoolName,
       feedback: feedback.map(f => ({
         id: f.id, date: f.date, category: f.category, content: f.content,
         shareWithStudent: f.share_with_student, shareWithParent: f.share_with_parent,

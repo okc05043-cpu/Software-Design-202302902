@@ -174,6 +174,8 @@ export default function AccountPage({ user, onLogout }) {
     );
   }
 
+  const schoolName = cur?.schoolName || user?.schoolName || null;
+
   return (
     <div style={s.page}>
       <TopBar user={user} onLogout={onLogout} isMobile={isMobile} />
@@ -184,76 +186,118 @@ export default function AccountPage({ user, onLogout }) {
         </div>
       )}
 
-      <div style={{ ...s.card, ...(isMobile ? s.cardMobile : {}), background: '#1e1b3a', border: '1px solid #4a3f8a' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-          <div>
-            <span style={{ fontSize: isMobile ? 17 : 20, fontWeight: 'bold', color: '#dde0f0' }}>{cur.basicInfo.name}</span>
-            <span style={{ color: '#8b8fa8', marginLeft: 10, fontSize: 14 }}>
-              {cur.basicInfo.grade    && `${cur.basicInfo.grade}학년 `}
-              {cur.basicInfo.classNum && `${cur.basicInfo.classNum}반 `}
-              {cur.basicInfo.studentNumber && `${cur.basicInfo.studentNumber}번`}
-            </span>
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: isMobile ? '0 12px' : '0 20px', display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+
+        {/* 좌측 프로필 카드 */}
+        {!isMobile && (
+          <div style={{ width: 180, flexShrink: 0, background: '#1a1d27', border: '1px solid #2d3148', borderRadius: 12, padding: 20, display: 'flex', flexDirection: 'column', minHeight: 220 }}>
+            <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#2d2558', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, color: '#a89bf7', fontWeight: 'bold', marginBottom: 14 }}>
+              {cur.basicInfo.name?.[0] ?? '?'}
+            </div>
+            <div style={{ fontWeight: 'bold', fontSize: 16, color: '#dde0f0', marginBottom: 8 }}>{cur.basicInfo.name}</div>
+            {cur.basicInfo.grade && (
+              <div style={{ fontSize: 13, color: '#8b8fa8', marginBottom: 4 }}>{cur.basicInfo.grade}학년 {cur.basicInfo.classNum}반</div>
+            )}
+            {cur.basicInfo.studentNumber && (
+              <div style={{ fontSize: 13, color: '#8b8fa8', marginBottom: 4 }}>{cur.basicInfo.studentNumber}번</div>
+            )}
+            <div style={{ flex: 1 }} />
+            {schoolName && (
+              <div style={{ fontSize: 12, color: '#7c6af0', borderTop: '1px solid #2d3148', paddingTop: 12, marginTop: 8, wordBreak: 'keep-all' }}>
+                {schoolName}
+              </div>
+            )}
           </div>
-          {isTeacher && isInfoTab && !isEditing && <button onClick={startEdit} style={s.editBtn}>수정</button>}
-          {isTeacher && isInfoTab && isEditing && (
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={saveEdit} style={s.saveBtn}>저장</button>
-              <button onClick={cancelEdit} style={s.cancelBtn}>취소</button>
+        )}
+
+        {/* 우측 메인 콘텐츠 */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {/* 모바일용 학생 정보 헤더 */}
+          {isMobile && (
+            <div style={{ background: '#1e1b3a', border: '1px solid #4a3f8a', borderRadius: 12, padding: 14, marginBottom: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <span style={{ fontSize: 17, fontWeight: 'bold', color: '#dde0f0' }}>{cur.basicInfo.name}</span>
+                  <span style={{ color: '#8b8fa8', marginLeft: 8, fontSize: 13 }}>
+                    {cur.basicInfo.grade && `${cur.basicInfo.grade}학년 `}
+                    {cur.basicInfo.classNum && `${cur.basicInfo.classNum}반 `}
+                    {cur.basicInfo.studentNumber && `${cur.basicInfo.studentNumber}번`}
+                  </span>
+                </div>
+                {isTeacher && isInfoTab && !isEditing && <button onClick={startEdit} style={s.editBtn}>수정</button>}
+                {isTeacher && isInfoTab && isEditing && (
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button onClick={saveEdit} style={s.saveBtn}>저장</button>
+                    <button onClick={cancelEdit} style={s.cancelBtn}>취소</button>
+                  </div>
+                )}
+              </div>
             </div>
           )}
-        </div>
-      </div>
 
-      <div style={{ maxWidth: 900, margin: '0 auto', padding: isMobile ? '0 12px' : '0 20px' }}>
-        <div style={{ display: 'flex', borderBottom: '2px solid #2d3148', overflowX: 'auto' }}>
-          {TABS.map(tab => (
-            <button key={tab} onClick={() => { setActiveTab(tab); if (isEditing) setIsEditing(false); }} style={{
-              padding: isMobile ? '8px 10px' : '10px 20px',
-              border: 'none', background: 'none', cursor: 'pointer',
-              fontSize: isMobile ? 12 : 14, whiteSpace: 'nowrap',
-              fontWeight: activeTab === tab ? 'bold' : 'normal',
-              color: activeTab === tab ? '#a89bf7' : '#8b8fa8',
-              borderBottom: activeTab === tab ? '2px solid #7c6af0' : '2px solid transparent',
-              marginBottom: -2,
-            }}>{tab}</button>
-          ))}
-        </div>
-      </div>
+          {/* 데스크탑 수정 버튼 */}
+          {!isMobile && isTeacher && isInfoTab && (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+              {!isEditing && <button onClick={startEdit} style={s.editBtn}>수정</button>}
+              {isEditing && (
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button onClick={saveEdit} style={s.saveBtn}>저장</button>
+                  <button onClick={cancelEdit} style={s.cancelBtn}>취소</button>
+                </div>
+              )}
+            </div>
+          )}
 
-      <div style={{ ...s.card, ...(isMobile ? s.cardMobile : {}) }}>
-        {activeTab === '기본정보' && (
-          <BasicInfoTab info={cur.basicInfo} isEditing={isEditing} isMobile={isMobile}
-            onChange={(f, v) => setDraft(prev => ({ ...prev, basicInfo: { ...prev.basicInfo, [f]: v } }))} />
-        )}
-        {activeTab === '성적' && (
-          <GradeTab subjects={cur.subjects} isEditing={isEditing} isTeacher={isTeacher} isMobile={isMobile}
-            onScoreChange={(i, v) => setDraft(prev => ({ ...prev, subjects: prev.subjects.map((sub, idx) => idx===i?{...sub,score:Number(v)}:sub) }))}
-            onNameChange={(i, v)  => setDraft(prev => ({ ...prev, subjects: prev.subjects.map((sub, idx) => idx===i?{...sub,name:v}:sub) }))}
-            onAddSubject={() => setDraft(prev => ({ ...prev, subjects: [...prev.subjects, { name:'새 과목', score:0 }] }))}
-            onRemoveSubject={i => setDraft(prev => ({ ...prev, subjects: prev.subjects.filter((_,idx)=>idx!==i) }))} />
-        )}
-        {activeTab === '출결' && (
-          <AttendanceTab attendance={cur.attendance} isEditing={isEditing} isMobile={isMobile}
-            onChange={(f, v) => setDraft(prev => ({ ...prev, attendance: { ...prev.attendance, [f]: Number(v) } }))} />
-        )}
-        {activeTab === '특기사항' && (
-          <NotesTab notes={cur.notes} customFields={cur.customFields} isEditing={isEditing} isTeacher={isTeacher}
-            onNotesChange={v => setDraft(prev => ({ ...prev, notes: v }))}
-            onFieldValueChange={(i,v)  => setDraft(prev => ({ ...prev, customFields: prev.customFields.map((f,idx)=>idx===i?{...f,value:v}:f) }))}
-            onFieldLabelChange={(i,v)  => setDraft(prev => ({ ...prev, customFields: prev.customFields.map((f,idx)=>idx===i?{...f,label:v}:f) }))}
-            onAddField={() => setDraft(prev => ({ ...prev, customFields: [...prev.customFields, { id:String(Date.now()), label:'새 항목', value:'' }] }))}
-            onRemoveField={i => setDraft(prev => ({ ...prev, customFields: prev.customFields.filter((_,idx)=>idx!==i) }))} />
-        )}
-        {activeTab === '피드백' && (
-          <FeedbackTab studentId={selectedId} user={user} isTeacher={isTeacher}
-            isStudent={user.role==='student'} isParent={isParent} isMobile={isMobile}
-            feedback={cur.feedback} onRefresh={refreshRecord} />
-        )}
-        {activeTab === '상담' && (
-          <CounselingTab studentId={selectedId} studentName={cur.basicInfo.name}
-            user={user} isTeacher={isTeacher} isMobile={isMobile}
-            counseling={cur.counseling} onRefresh={refreshRecord} />
-        )}
+          <div style={{ display: 'flex', borderBottom: '2px solid #2d3148', overflowX: 'auto', marginBottom: 0 }}>
+            {TABS.map(tab => (
+              <button key={tab} onClick={() => { setActiveTab(tab); if (isEditing) setIsEditing(false); }} style={{
+                padding: isMobile ? '8px 10px' : '10px 20px',
+                border: 'none', background: 'none', cursor: 'pointer',
+                fontSize: isMobile ? 12 : 14, whiteSpace: 'nowrap',
+                fontWeight: activeTab === tab ? 'bold' : 'normal',
+                color: activeTab === tab ? '#a89bf7' : '#8b8fa8',
+                borderBottom: activeTab === tab ? '2px solid #7c6af0' : '2px solid transparent',
+                marginBottom: -2,
+              }}>{tab}</button>
+            ))}
+          </div>
+
+          <div style={{ background: '#1a1d27', border: '1px solid #2d3148', borderRadius: '0 0 12px 12px', padding: isMobile ? 14 : 20, marginTop: 0 }}>
+            {activeTab === '기본정보' && (
+              <BasicInfoTab info={cur.basicInfo} isEditing={isEditing} isMobile={isMobile}
+                onChange={(f, v) => setDraft(prev => ({ ...prev, basicInfo: { ...prev.basicInfo, [f]: v } }))} />
+            )}
+            {activeTab === '성적' && (
+              <GradeTab subjects={cur.subjects} isEditing={isEditing} isTeacher={isTeacher} isMobile={isMobile}
+                onScoreChange={(i, v) => setDraft(prev => ({ ...prev, subjects: prev.subjects.map((sub, idx) => idx===i?{...sub,score:Number(v)}:sub) }))}
+                onNameChange={(i, v)  => setDraft(prev => ({ ...prev, subjects: prev.subjects.map((sub, idx) => idx===i?{...sub,name:v}:sub) }))}
+                onAddSubject={() => setDraft(prev => ({ ...prev, subjects: [...prev.subjects, { name:'새 과목', score:0 }] }))}
+                onRemoveSubject={i => setDraft(prev => ({ ...prev, subjects: prev.subjects.filter((_,idx)=>idx!==i) }))} />
+            )}
+            {activeTab === '출결' && (
+              <AttendanceTab attendance={cur.attendance} isEditing={isEditing} isMobile={isMobile}
+                onChange={(f, v) => setDraft(prev => ({ ...prev, attendance: { ...prev.attendance, [f]: Number(v) } }))} />
+            )}
+            {activeTab === '특기사항' && (
+              <NotesTab notes={cur.notes} customFields={cur.customFields} isEditing={isEditing} isTeacher={isTeacher}
+                onNotesChange={v => setDraft(prev => ({ ...prev, notes: v }))}
+                onFieldValueChange={(i,v)  => setDraft(prev => ({ ...prev, customFields: prev.customFields.map((f,idx)=>idx===i?{...f,value:v}:f) }))}
+                onFieldLabelChange={(i,v)  => setDraft(prev => ({ ...prev, customFields: prev.customFields.map((f,idx)=>idx===i?{...f,label:v}:f) }))}
+                onAddField={() => setDraft(prev => ({ ...prev, customFields: [...prev.customFields, { id:String(Date.now()), label:'새 항목', value:'' }] }))}
+                onRemoveField={i => setDraft(prev => ({ ...prev, customFields: prev.customFields.filter((_,idx)=>idx!==i) }))} />
+            )}
+            {activeTab === '피드백' && (
+              <FeedbackTab studentId={selectedId} user={user} isTeacher={isTeacher}
+                isStudent={user.role==='student'} isParent={isParent} isMobile={isMobile}
+                feedback={cur.feedback} onRefresh={refreshRecord} />
+            )}
+            {activeTab === '상담' && (
+              <CounselingTab studentId={selectedId} studentName={cur.basicInfo.name}
+                user={user} isTeacher={isTeacher} isMobile={isMobile}
+                counseling={cur.counseling} onRefresh={refreshRecord} />
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
