@@ -31,6 +31,7 @@ export default function AccountPage({ user, onLogout }) {
   const [attendanceEditMode, setAttendanceEditMode] = useState(false);
   const [absentIds,      setAbsentIds]      = useState(new Set());
   const [attendanceSaving, setAttendanceSaving] = useState(false);
+  const [attendClicked,  setAttendClicked]  = useState(new Set());
 
   useEffect(() => {
     if (isTeacher) {
@@ -70,10 +71,16 @@ export default function AccountPage({ user, onLogout }) {
   };
 
   const handleQuickAttendance = async (studentId) => {
+    const today = new Date().toISOString().slice(0, 10);
+    const key = `attend_${studentId}_${today}`;
+    if (localStorage.getItem(key)) return;
+    setAttendClicked(prev => new Set(prev).add(studentId));
+    setTimeout(() => setAttendClicked(prev => { const n = new Set(prev); n.delete(studentId); return n; }), 800);
     try {
       const rec = await api.getRecord(studentId);
       const updated = { ...rec, attendance: { ...rec.attendance, present: (rec.attendance.present || 0) + 1 } };
       await api.saveRecord(studentId, updated);
+      localStorage.setItem(key, '1');
     } catch (e) { console.error(e); }
   };
 
@@ -174,7 +181,8 @@ export default function AccountPage({ user, onLogout }) {
                       </div>
                       <div style={{ display: 'flex', gap: 6 }}>
                         <button onClick={() => setSelectedId(st.id)} style={s.smallBtn}>학생부 보기</button>
-                        <button onClick={() => handleQuickAttendance(st.id)} style={{ ...s.smallBtn, background: '#1a3a2a', color: '#4ade80', border: '1px solid #2d6a4f' }}>출석</button>
+                        <button onClick={() => handleQuickAttendance(st.id)} style={{ ...s.smallBtn, background: attendClicked.has(st.id) ? '#4ade80' : '#1a3a2a', color: attendClicked.has(st.id) ? '#0f2a1a' : '#4ade80', border: '1px solid #2d6a4f', transform: attendClicked.has(st.id) ? 'scale(0.93)' : 'scale(1)', transition: 'all 0.15s' }}>
+                                {attendClicked.has(st.id) ? '✓' : (localStorage.getItem(`attend_${st.id}_${new Date().toISOString().slice(0,10)}`) ? '완료' : '출석')}</button>
                       </div>
                     </div>
                   ))}
@@ -204,7 +212,8 @@ export default function AccountPage({ user, onLogout }) {
                             <div style={{ display: 'flex', gap: 6 }}>
                               <button onClick={() => setSelectedId(st.id)} style={s.smallBtn}>학생부 보기</button>
                               {!attendanceEditMode && (
-                                <button onClick={() => handleQuickAttendance(st.id)} style={{ ...s.smallBtn, background: '#1a3a2a', color: '#4ade80', border: '1px solid #2d6a4f' }}>출석</button>
+                                <button onClick={() => handleQuickAttendance(st.id)} style={{ ...s.smallBtn, background: attendClicked.has(st.id) ? '#4ade80' : '#1a3a2a', color: attendClicked.has(st.id) ? '#0f2a1a' : '#4ade80', border: '1px solid #2d6a4f', transform: attendClicked.has(st.id) ? 'scale(0.93)' : 'scale(1)', transition: 'all 0.15s' }}>
+                                {attendClicked.has(st.id) ? '✓' : (localStorage.getItem(`attend_${st.id}_${new Date().toISOString().slice(0,10)}`) ? '완료' : '출석')}</button>
                               )}
                             </div>
                           </td>
