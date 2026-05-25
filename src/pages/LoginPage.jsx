@@ -52,13 +52,6 @@ export default function LoginPage({ onGoRegister, onLogin }) {
 
       {/* ── 왼쪽 브랜딩 패널 ── */}
       <aside className="login-aside">
-        <div className="aside-top">
-          <div className="brand-mark">
-            <span className="brand-mark-text">SM</span>
-          </div>
-          <span className="brand-version">SYS / v3.0</span>
-        </div>
-
         <div className="aside-center">
           <p className="aside-label">EDUCATION PLATFORM</p>
           <h1 className="aside-title">
@@ -77,7 +70,7 @@ export default function LoginPage({ onGoRegister, onLogin }) {
           </div>
           <div className="stat-row">
             <span className="stat-label">YEAR</span>
-            <span className="stat-value">2025</span>
+            <span className="stat-value">2026</span>
           </div>
           <div className="stat-row">
             <span className="stat-label">UNIV.</span>
