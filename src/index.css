@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+KR:wght@400;500;700;900&display=swap');
+
 * {
   box-sizing: border-box;
 }
@@ -9,9 +11,379 @@
 body {
   margin: 0;
   font-family: 'Noto Sans KR', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 input[type="date"],
 input[type="time"] {
   color-scheme: dark;
+}
+
+/* ─────────────────────────────────────────
+   LOGIN PAGE
+───────────────────────────────────────── */
+
+.login-root {
+  min-height: 100vh;
+  display: flex;
+  background: #07090f;
+  /* 도트 그리드 */
+  background-image: radial-gradient(circle, #161926 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* ── 왼쪽 패널 ── */
+.login-aside {
+  width: 320px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 40px 36px;
+  border-right: 1px solid #13162a;
+  background: #06080d;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 배경 대형 숫자 장식 */
+.login-aside::before {
+  content: '管';
+  position: absolute;
+  bottom: -20px;
+  right: -30px;
+  font-size: 220px;
+  font-weight: 900;
+  color: #0e1020;
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+}
+
+.aside-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-mark {
+  width: 32px;
+  height: 32px;
+  background: #e8920a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.brand-mark-text {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  color: #07090f;
+  letter-spacing: -0.03em;
+}
+
+.brand-version {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: #2d3148;
+  letter-spacing: 0.12em;
+}
+
+.aside-center {
+  position: relative;
+  z-index: 1;
+}
+
+.aside-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  color: #2d3148;
+  margin: 0 0 18px 0;
+}
+
+.aside-title {
+  font-size: 52px;
+  font-weight: 900;
+  line-height: 1.0;
+  letter-spacing: -0.04em;
+  color: #dde3f0;
+  margin: 0;
+}
+
+.aside-rule {
+  width: 36px;
+  height: 3px;
+  background: #e8920a;
+  margin: 24px 0 16px;
+}
+
+.aside-sub {
+  font-size: 13px;
+  color: #3d4260;
+  margin: 0;
+  letter-spacing: 0.04em;
+}
+
+.aside-bottom {
+  border-top: 1px solid #13162a;
+  padding-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+  z-index: 1;
+}
+
+.stat-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.stat-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  color: #2d3148;
+  width: 40px;
+  flex-shrink: 0;
+}
+
+.stat-value {
+  font-size: 12px;
+  color: #3d4260;
+  letter-spacing: 0.02em;
+}
+
+/* ── 오른쪽 패널 ── */
+.login-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 32px;
+}
+
+.login-form-wrap {
+  width: 100%;
+  max-width: 380px;
+}
+
+/* 역할 선택 */
+.role-header {
+  margin-bottom: 12px;
+}
+
+.form-eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  color: #2d3148;
+}
+
+.role-tabs {
+  display: flex;
+  border-bottom: 1px solid #13162a;
+  margin-bottom: 48px;
+}
+
+.role-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 12px 8px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  color: #3d4260;
+}
+
+.role-tab:hover {
+  color: #8b90aa;
+}
+
+.role-tab--active {
+  border-bottom-color: #e8920a;
+  color: #e8920a;
+}
+
+.role-tab-en {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.15em;
+}
+
+.role-tab-ko {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* 폼 필드 */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.field-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  color: #2d3148;
+}
+
+.field-input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid #1e2235;
+  padding: 10px 0;
+  color: #dde3f0;
+  font-size: 15px;
+  font-family: 'Noto Sans KR', system-ui, sans-serif;
+  outline: none;
+  transition: border-color 0.2s;
+  width: 100%;
+}
+
+.field-input::placeholder {
+  color: #2d3148;
+  font-size: 14px;
+}
+
+.field-input:focus {
+  border-bottom-color: #e8920a;
+}
+
+/* 에러 */
+.error-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-left: 2px solid #e84a4a;
+  background: rgba(232, 74, 74, 0.05);
+}
+
+.error-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #e84a4a;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.error-text {
+  margin: 0;
+  font-size: 13px;
+  color: #e87a7a;
+  line-height: 1.5;
+}
+
+/* 로그인 버튼 */
+.submit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 16px;
+  background: #e8920a;
+  color: #07090f;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  margin-top: 8px;
+  font-family: 'Noto Sans KR', system-ui, sans-serif;
+}
+
+.submit-btn:hover:not(:disabled) {
+  background: #f5a523;
+}
+
+.submit-btn:active:not(:disabled) {
+  transform: scale(0.99);
+}
+
+.submit-btn--loading {
+  background: #1e2235;
+  cursor: not-allowed;
+  color: #3d4260;
+}
+
+.submit-arrow {
+  font-size: 16px;
+  transition: transform 0.15s;
+}
+
+.submit-btn:hover:not(:disabled) .submit-arrow {
+  transform: translateX(4px);
+}
+
+.submit-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #3d4260;
+  border-top-color: #e8920a;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* 회원가입 */
+.register-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 32px;
+}
+
+.register-line {
+  flex: 1;
+  height: 1px;
+  background: #13162a;
+}
+
+.register-link {
+  font-size: 12px;
+  color: #3d4260;
+  background: none;
+  border: none;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  transition: color 0.15s;
+  white-space: nowrap;
+  font-family: 'Noto Sans KR', system-ui, sans-serif;
+}
+
+.register-link:hover {
+  color: #e8920a;
+}
+
+/* ── 반응형 ── */
+@media (max-width: 768px) {
+  .login-aside {
+    display: none;
+  }
 }

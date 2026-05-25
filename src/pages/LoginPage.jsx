@@ -1,42 +1,25 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { api } from '../api'
 
 const ROLES = [
-  { id: 'student', label: '학생', color: 'indigo' },
-  { id: 'parent', label: '학부모', color: 'indigo' },
-  { id: 'teacher', label: '교사', color: 'indigo' },
+  { id: 'student', label: '학생', en: 'STUDENT' },
+  { id: 'parent', label: '학부모', en: 'PARENT' },
+  { id: 'teacher', label: '교사', en: 'TEACHER' },
 ]
-
-const ROLE_COLORS = {
-  indigo: {
-    button: 'bg-indigo-600 hover:bg-indigo-500',
-    ring: 'focus:ring-indigo-500',
-    selected: '#3730a3',
-  },
-  emerald: {
-    button: 'bg-emerald-600 hover:bg-emerald-500',
-    ring: 'focus:ring-emerald-500',
-    selected: '#065f46',
-  },
-  violet: {
-    button: 'bg-violet-600 hover:bg-violet-500',
-    ring: 'focus:ring-violet-500',
-    selected: '#4c1d95',
-  },
-}
 
 export default function LoginPage({ onGoRegister, onLogin }) {
   const [selectedRole, setSelectedRole] = useState('student')
   const [form, setForm] = useState({ id: '', password: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-
-  const color = ROLE_COLORS[ROLES.find(r => r.id === selectedRole).color]
+  const idRef = useRef(null)
+  const pwRef = useRef(null)
 
   const handleRoleChange = (roleId) => {
     setSelectedRole(roleId)
     setForm({ id: '', password: '' })
     setError('')
+    setTimeout(() => idRef.current?.focus(), 0)
   }
 
   const handleChange = (e) => {
@@ -62,85 +45,133 @@ export default function LoginPage({ onGoRegister, onLogin }) {
     }
   }
 
+  const currentRole = ROLES.find(r => r.id === selectedRole)
+
   return (
-    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-[#0f1117]">
-      <div className="w-full max-w-md overflow-hidden" style={{ background: '#0f1117' }}>
-        <div className="px-8 py-6 text-center">
-          <h1 className="text-xl font-bold text-white">학생 성적 및 상담 관리 시스템</h1>
+    <div className="login-root">
+
+      {/* ── 왼쪽 브랜딩 패널 ── */}
+      <aside className="login-aside">
+        <div className="aside-top">
+          <div className="brand-mark">
+            <span className="brand-mark-text">SM</span>
+          </div>
+          <span className="brand-version">SYS / v3.0</span>
         </div>
 
-        <div className="px-8 py-6">
-          <div className="mb-6">
-            <div className="border border-[#2d3148]" style={{ background: '#1a1d2e' }}>
-              {ROLES.map((role, idx) => (
-                <button
-                  key={role.id}
-                  onClick={() => handleRoleChange(role.id)}
-                  className="w-full text-left px-4 py-2.5 text-sm font-medium transition-colors"
-                  style={{
-                    background: selectedRole === role.id ? ROLE_COLORS[role.color].selected : '#1a1d2e',
-                    color: selectedRole === role.id ? '#fff' : '#8b8fa8',
-                    borderBottom: idx < ROLES.length - 1 ? '1px solid #2d3148' : 'none',
-                  }}
-                >
-                  {role.label}
-                </button>
-              ))}
-            </div>
+        <div className="aside-center">
+          <p className="aside-label">EDUCATION PLATFORM</p>
+          <h1 className="aside-title">
+            학생<br />
+            성적<br />
+            관리
+          </h1>
+          <div className="aside-rule" />
+          <p className="aside-sub">상담 · 출결 · 성적 통합 관리</p>
+        </div>
+
+        <div className="aside-bottom">
+          <div className="stat-row">
+            <span className="stat-label">DEPT.</span>
+            <span className="stat-value">소프트웨어 설계</span>
+          </div>
+          <div className="stat-row">
+            <span className="stat-label">YEAR</span>
+            <span className="stat-value">2025</span>
+          </div>
+          <div className="stat-row">
+            <span className="stat-label">UNIV.</span>
+            <span className="stat-value">인천대학교</span>
+          </div>
+        </div>
+      </aside>
+
+      {/* ── 오른쪽 폼 패널 ── */}
+      <main className="login-main">
+        <div className="login-form-wrap">
+
+          {/* 역할 선택 */}
+          <div className="role-header">
+            <span className="form-eyebrow">ROLE SELECT</span>
+          </div>
+          <div className="role-tabs">
+            {ROLES.map(role => (
+              <button
+                key={role.id}
+                type="button"
+                onClick={() => handleRoleChange(role.id)}
+                className={`role-tab ${selectedRole === role.id ? 'role-tab--active' : ''}`}
+              >
+                <span className="role-tab-en">{role.en}</span>
+                <span className="role-tab-ko">{role.label}</span>
+              </button>
+            ))}
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-[#8b8fa8] mb-1">아이디</label>
+          {/* 로그인 폼 */}
+          <form onSubmit={handleSubmit} className="login-form" noValidate>
+            <div className="field-group">
+              <label className="field-label">ID</label>
               <input
+                ref={idRef}
                 type="text"
                 name="id"
                 value={form.id}
                 onChange={handleChange}
-                placeholder={`${ROLES.find(r => r.id === selectedRole).label} 아이디`}
-                className={`w-full px-4 py-2.5 text-sm outline-none focus:ring-2 ${color.ring} focus:border-transparent`}
-                style={{ background: '#1a1d2e', border: '1px solid #2d3148', color: '#dde0f0' }}
+                placeholder={`${currentRole.label} 아이디 입력`}
+                className="field-input"
+                autoComplete="username"
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-[#8b8fa8] mb-1">비밀번호</label>
+            <div className="field-group">
+              <label className="field-label">PW</label>
               <input
+                ref={pwRef}
                 type="password"
                 name="password"
                 value={form.password}
                 onChange={handleChange}
-                placeholder="비밀번호"
-                className={`w-full px-4 py-2.5 text-sm outline-none focus:ring-2 ${color.ring} focus:border-transparent`}
-                style={{ background: '#1a1d2e', border: '1px solid #2d3148', color: '#dde0f0' }}
+                placeholder="비밀번호 입력"
+                className="field-input"
+                autoComplete="current-password"
               />
             </div>
 
             {error && (
-              <p className="text-red-400 text-sm px-3 py-2" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)' }}>
-                {error}
-              </p>
+              <div className="error-box">
+                <span className="error-dot" />
+                <p className="error-text">{error}</p>
+              </div>
             )}
 
             <button
               type="submit"
               disabled={loading}
-              className={`w-full ${color.button} text-white font-semibold py-2.5 transition-colors disabled:opacity-60`}
+              className={`submit-btn ${loading ? 'submit-btn--loading' : ''}`}
             >
-              {loading ? '로그인 중...' : '로그인'}
+              {loading ? (
+                <span className="submit-spinner" />
+              ) : (
+                <>
+                  <span>로그인</span>
+                  <span className="submit-arrow">→</span>
+                </>
+              )}
             </button>
           </form>
 
-          <p className="text-center text-sm mt-4">
-            <button
-              onClick={onGoRegister}
-              className="text-[#a89bf7] font-semibold hover:underline"
-            >
-              회원가입
+          {/* 회원가입 */}
+          <div className="register-row">
+            <div className="register-line" />
+            <button type="button" onClick={onGoRegister} className="register-link">
+              계정 만들기
             </button>
-          </p>
+            <div className="register-line" />
+          </div>
+
         </div>
-      </div>
+      </main>
     </div>
   )
 }
