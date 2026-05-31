@@ -168,13 +168,23 @@ ${subjectLines}
 `;
       }
     } else {
-      const [classSummary] = await pool.query(
-        `SELECT * FROM analytics_class_summary ORDER BY grade, class_num`
+      // 전체 학생 + 과목별 점수 포함
+      const [students] = await pool.query(
+        `SELECT * FROM analytics_student_summary ORDER BY grade, class_num, avg_score DESC`
       );
-      const lines = classSummary.map(c =>
-        `  - ${c.grade}학년 ${c.class_num}반: 학생 ${c.student_count}명, 평균성적 ${c.avg_score}점, 출석률 ${c.avg_attendance_rate}%`
-      ).join('\n');
-      contextText = `\n[전체 반별 집계 데이터]\n${lines}\n`;
+      const [subjectStats] = await pool.query(
+        `SELECT * FROM analytics_subject_stats`
+      );
+      const subjectMap = {};
+      for (const s of subjectStats) {
+        if (!subjectMap[s.student_id]) subjectMap[s.student_id] = [];
+        subjectMap[s.student_id].push(`${s.subject_name}: ${s.score}점`);
+      }
+      const studentLines = students.map(s => {
+        const subs = (subjectMap[s.student_id] || []).join(', ');
+        return `  - ${s.student_name} (${s.grade}학년 ${s.class_num}반): 평균 ${s.avg_score}점, 출석률 ${s.attendance_rate}%, [${subs}]`;
+      }).join('\n');
+      contextText = `\n[전체 학생 데이터]\n${studentLines}\n`;
     }
 
     const systemPrompt = `당신은 학생 학습 현황을 분석해주는 교육 도우미입니다.
