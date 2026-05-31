@@ -186,7 +186,7 @@ ${subjectLines}
       : message;
 
     const model = genai.getGenerativeModel(
-      { model: 'gemini-1.5-flash' },
+      { model: 'gemini-2.0-flash-lite' },
       { apiVersion: 'v1' }
     );
     const result = await model.generateContent(`${systemPrompt}\n\n${userPrompt}`);
