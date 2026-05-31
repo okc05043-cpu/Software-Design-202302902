@@ -7,7 +7,7 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const router = express.Router();
 router.use(auth);
 
-const genai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const genai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY, { apiVersion: 'v1' });
 
 // 교사만 분석 데이터 조회 가능
 function teacherOnly(req, res, next) {
@@ -186,7 +186,7 @@ ${subjectLines}
       : message;
 
     const model = genai.getGenerativeModel({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-1.5-flash',
       systemInstruction: systemPrompt,
     });
     const result = await model.generateContent(userPrompt);
