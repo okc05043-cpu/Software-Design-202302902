@@ -212,6 +212,14 @@ router.put('/:studentId/record', async (req, res) => {
       classId = classRow?.id || null;
     }
 
+    // ── 이름 갱신 (users 테이블) ──────────────────────────────────
+    if (basicInfo?.name) {
+      await pool.query(
+        `UPDATE users SET name = ? WHERE id = ? AND role = 'student'`,
+        [basicInfo.name, studentId]
+      );
+    }
+
     // ── 학생 프로필 갱신 ──────────────────────────────────────────
     await pool.query(
       `INSERT INTO students (user_id, class_id, student_number, notes)

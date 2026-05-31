@@ -93,7 +93,7 @@ router.post('/login', async (req, res) => {
     }
 
     const user = { id: dbUser.id, name: dbUser.name, role: dbUser.role, schoolName };
-    const token = jwt.sign(user, JWT_SECRET, { expiresIn: '20m' });
+    const token = jwt.sign(user, JWT_SECRET, { expiresIn: '7d' });
     res.json({ token, user });
   } catch (err) {
     console.error(err);
@@ -192,7 +192,7 @@ router.post('/register', async (req, res) => {
       );
     }
 
-    const token = jwt.sign({ id, name, role }, JWT_SECRET, { expiresIn: '20m' });
+    const token = jwt.sign({ id, name, role }, JWT_SECRET, { expiresIn: '7d' });
     res.json({ token, user: { id, name, role } });
   } catch (err) {
     console.error(err);
