@@ -2,12 +2,12 @@ const express    = require('express');
 const pool       = require('../db');
 const auth       = require('../middleware/auth');
 const { processEvents } = require('../etl');
-const OpenAI     = require('openai');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const router = express.Router();
 router.use(auth);
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const genai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // 교사만 분석 데이터 조회 가능
 function teacherOnly(req, res, next) {
@@ -134,8 +134,8 @@ router.post('/trigger-etl', teacherOnly, async (req, res) => {
 // ── POST /api/analytics/chat ──────────────────────────────────────────
 // AI 챗봇: 분석 데이터 기반 학생 질의응답
 router.post('/chat', teacherOnly, async (req, res) => {
-  if (!process.env.OPENAI_API_KEY) {
-    return res.status(503).json({ error: 'OPENAI_API_KEY가 설정되지 않았습니다.' });
+  if (!process.env.GEMINI_API_KEY) {
+    return res.status(503).json({ error: 'GEMINI_API_KEY가 설정되지 않았습니다.' });
   }
 
   const { student_id, message } = req.body;
@@ -185,16 +185,12 @@ ${subjectLines}
       ? `다음 데이터를 참고해서 답변해주세요:\n${contextText}\n질문: ${message}`
       : message;
 
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      max_tokens: 1024,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user',   content: userPrompt },
-      ],
+    const model = genai.getGenerativeModel({
+      model: 'gemini-1.5-flash',
+      systemInstruction: systemPrompt,
     });
-
-    res.json({ reply: response.choices[0].message.content });
+    const result = await model.generateContent(userPrompt);
+    res.json({ reply: result.response.text() });
   } catch (err) {
     console.error('[AI Chat 오류]', err.message);
     res.status(500).json({ error: 'AI 응답 오류: ' + err.message });
