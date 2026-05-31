@@ -186,10 +186,10 @@ ${subjectLines}
       : message;
 
     const model = genai.getGenerativeModel(
-      { model: 'gemini-1.5-flash', systemInstruction: systemPrompt },
+      { model: 'gemini-1.5-flash' },
       { apiVersion: 'v1' }
     );
-    const result = await model.generateContent(userPrompt);
+    const result = await model.generateContent(`${systemPrompt}\n\n${userPrompt}`);
     res.json({ reply: result.response.text() });
   } catch (err) {
     console.error('[AI Chat 오류]', err.message);
