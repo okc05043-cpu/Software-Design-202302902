@@ -1,4 +1,5 @@
 export const TABS = ['기본정보', '성적', '출결', '특기사항', '피드백', '상담'];
+export const TEACHER_TABS = [...TABS, '학습분석'];
 export const FEEDBACK_CATEGORIES = ['성적', '행동', '출결', '태도', '기타'];
 export const CATEGORY_COLORS = {
   '성적': '#2563eb', '행동': '#16a34a', '출결': '#d97706', '태도': '#7c3aed', '기타': '#6b7280',

@@ -76,16 +76,23 @@ router.post('/login', async (req, res) => {
       [id, role]
     );
 
-    let user = null;
+    if (rows.length === 0) return res.status(401).json({ error: '아이디 또는 비밀번호가 올바르지 않습니다.' });
 
-    if (rows.length > 0) {
-      const dbUser = rows[0];
-      const match = await bcrypt.compare(password, dbUser.password);
-      if (match) user = { id: dbUser.id, name: dbUser.name, role: dbUser.role, schoolName: dbUser.school_name || null };
+    const dbUser = rows[0];
+    const match = await bcrypt.compare(password, dbUser.password);
+    if (!match) return res.status(401).json({ error: '아이디 또는 비밀번호가 올바르지 않습니다.' });
+
+    // 역할별 school_name 조회
+    let schoolName = null;
+    if (role === 'teacher') {
+      const [[t]] = await pool.query(`SELECT school_name FROM teachers WHERE user_id = ?`, [id]);
+      schoolName = t?.school_name || null;
+    } else if (role === 'student') {
+      const [[s]] = await pool.query(`SELECT school_name FROM students WHERE user_id = ?`, [id]);
+      schoolName = s?.school_name || null;
     }
 
-    if (!user) return res.status(401).json({ error: '아이디 또는 비밀번호가 올바르지 않습니다.' });
-
+    const user = { id: dbUser.id, name: dbUser.name, role: dbUser.role, schoolName };
     const token = jwt.sign(user, JWT_SECRET, { expiresIn: '20m' });
     res.json({ token, user });
   } catch (err) {
@@ -96,7 +103,12 @@ router.post('/login', async (req, res) => {
 
 // 회원가입
 router.post('/register', async (req, res) => {
-  const { id, password, name, role, subject, employeeNumber, grade, classNum, studentNumber, childName, childGrade, childClass, schoolName, schoolType } = req.body;
+  const {
+    id, password, name, role,
+    subject, employeeNumber, grade, classNum, studentNumber,
+    childName, childGrade, childClass,
+    schoolName, schoolType,
+  } = req.body;
   if (!id || !password || !name || !role) return res.status(400).json({ error: '입력값이 부족합니다.' });
 
   try {
@@ -104,27 +116,79 @@ router.post('/register', async (req, res) => {
     if (exists.length > 0) return res.status(409).json({ error: '이미 사용 중인 아이디입니다.' });
 
     const hashed = await bcrypt.hash(password, 10);
+
+    // 1. 공통 users 테이블
     await pool.query(
-      `INSERT INTO users (id, role, password, name, subject, employee_number, grade, class_num, student_number, child_name, child_grade, child_class, school_name, school_type)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-      [id, role, hashed, name, subject||null, employeeNumber||null, grade||null, classNum||null, studentNumber||null, childName||null, childGrade||null, childClass||null, schoolName||null, schoolType||null]
+      `INSERT INTO users (id, role, password, name) VALUES (?, ?, ?, ?)`,
+      [id, role, hashed, name]
     );
 
-    if (role === 'student') {
+    // 2. 역할별 프로필 테이블
+    if (role === 'teacher') {
+      await pool.query(
+        `INSERT INTO teachers (user_id, subject, employee_number, school_name, school_type)
+         VALUES (?, ?, ?, ?, ?)`,
+        [id, subject || null, employeeNumber || null, schoolName || null, schoolType || null]
+      );
+
+    } else if (role === 'student') {
+      // 학급 찾기 또는 생성
+      let classId = null;
+      if (grade && classNum) {
+        await pool.query(
+          `INSERT IGNORE INTO classes (grade, class_num) VALUES (?, ?)`,
+          [grade, classNum]
+        );
+        const [[classRow]] = await pool.query(
+          `SELECT id FROM classes WHERE grade = ? AND class_num = ?`,
+          [grade, classNum]
+        );
+        classId = classRow?.id || null;
+      }
+
+      // 학생 프로필
+      await pool.query(
+        `INSERT INTO students (user_id, class_id, student_number, school_name) VALUES (?, ?, ?, ?)`,
+        [id, classId, studentNumber || null, schoolName || null]
+      );
+
+      // 출결 집계 초기화
+      await pool.query(`INSERT INTO attendance_summary (student_id) VALUES (?)`, [id]);
+
+      // 기본 성적 (과목별 0점)
+      await pool.query(
+        `INSERT IGNORE INTO grades (student_id, subject_id, score) SELECT ?, id, 0 FROM subjects`,
+        [id]
+      );
+
+      // 커스텀 필드 초기화
+      await pool.query(
+        `INSERT INTO student_custom_fields (student_id, field_key, label, value) VALUES
+         (?, 'health', '건강상태', ''), (?, 'hobby', '특기/취미', '')`,
+        [id, id]
+      );
+
+      // 하위 호환: student_records
       await pool.query(
         `INSERT IGNORE INTO student_records (student_id, basic_info, subjects, attendance, notes, custom_fields)
-         VALUES (?,?,?,?,?,?)`,
+         VALUES (?, ?, ?, ?, ?, ?)`,
         [
           id,
-          JSON.stringify({ name, grade: grade||'', classNum: classNum||'', studentNumber: studentNumber||'' }),
+          JSON.stringify({ name, grade: grade || '', classNum: classNum || '', studentNumber: studentNumber || '' }),
           JSON.stringify([
-            { name:'국어', score:0 }, { name:'영어', score:0 }, { name:'수학', score:0 },
-            { name:'과학', score:0 }, { name:'사회', score:0 },
+            { name: '국어', score: 0 }, { name: '영어', score: 0 }, { name: '수학', score: 0 },
+            { name: '과학', score: 0 }, { name: '사회', score: 0 },
           ]),
-          JSON.stringify({ present:0, absent:0, late:0, earlyLeave:0 }),
+          JSON.stringify({ present: 0, absent: 0, late: 0, earlyLeave: 0 }),
           '',
-          JSON.stringify([{ id:'health', label:'건강상태', value:'' }, { id:'hobby', label:'특기/취미', value:'' }]),
+          JSON.stringify([{ id: 'health', label: '건강상태', value: '' }, { id: 'hobby', label: '특기/취미', value: '' }]),
         ]
+      );
+
+    } else if (role === 'parent') {
+      await pool.query(
+        `INSERT INTO parents (user_id, child_name, child_grade, child_class) VALUES (?, ?, ?, ?)`,
+        [id, childName || null, childGrade || null, childClass || null]
       );
     }
 
@@ -137,4 +201,3 @@ router.post('/register', async (req, res) => {
 });
 
 module.exports = router;
-  

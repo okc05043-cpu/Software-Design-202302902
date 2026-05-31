@@ -38,6 +38,19 @@ export const api = {
   addCounseling: (studentId, data) => request('POST', `/counseling/${studentId}`, data),
   deleteCounseling: (id) => request('DELETE', `/counseling/${id}`),
 
+  // 분석 (OLAP)
+  getAnalyticsDashboard: () => request('GET', '/analytics/dashboard'),
+  getAnalyticsStudents: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request('GET', `/analytics/students${q ? '?' + q : ''}`);
+  },
+  getAnalyticsStudent: (id) => request('GET', `/analytics/students/${id}`),
+  triggerEtl: () => request('POST', '/analytics/trigger-etl', {}),
+
+  // AI 챗봇
+  chatWithAI: (message, student_id = null) =>
+    request('POST', '/analytics/chat', { message, student_id }),
+
   // 알림
   getNotifications: () => request('GET', '/notifications'),
   markRead: (id) => request('PATCH', `/notifications/${id}/read`),

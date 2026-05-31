@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import useIsMobile from '../hooks/useIsMobile';
-import { TABS } from '../components/constants';
+import { TABS, TEACHER_TABS } from '../components/constants';
 import { api } from '../api';
 import TopBar from '../components/TopBar';
 import GlobalSearchPanel from '../components/GlobalSearchPanel';
@@ -10,6 +10,7 @@ import AttendanceTab from '../components/AttendanceTab';
 import NotesTab from '../components/NotesTab';
 import FeedbackTab from '../components/FeedbackTab';
 import CounselingTab from '../components/CounselingTab';
+import AnalyticsTab from '../components/AnalyticsTab';
 import s from '../components/styles';
 
 export default function AccountPage({ user, onLogout }) {
@@ -377,14 +378,18 @@ export default function AccountPage({ user, onLogout }) {
           )}
 
           <div style={{ display: 'flex', borderBottom: '2px solid #2d3148', overflowX: 'auto', marginBottom: 0 }}>
-            {TABS.map(tab => (
+            {(isTeacher ? TEACHER_TABS : TABS).map(tab => (
               <button key={tab} onClick={() => { setActiveTab(tab); if (isEditing) setIsEditing(false); }} style={{
                 padding: isMobile ? '8px 10px' : '10px 20px',
                 border: 'none', background: 'none', cursor: 'pointer',
                 fontSize: isMobile ? 12 : 14, whiteSpace: 'nowrap',
                 fontWeight: activeTab === tab ? 'bold' : 'normal',
-                color: activeTab === tab ? '#a89bf7' : '#8b8fa8',
-                borderBottom: activeTab === tab ? '2px solid #7c6af0' : '2px solid transparent',
+                color: activeTab === tab
+                  ? (tab === '학습분석' ? '#e8920a' : '#a89bf7')
+                  : '#8b8fa8',
+                borderBottom: activeTab === tab
+                  ? `2px solid ${tab === '학습분석' ? '#e8920a' : '#7c6af0'}`
+                  : '2px solid transparent',
                 marginBottom: -2,
               }}>{tab}</button>
             ))}
@@ -423,6 +428,9 @@ export default function AccountPage({ user, onLogout }) {
               <CounselingTab studentId={selectedId} studentName={cur.basicInfo.name}
                 user={user} isTeacher={isTeacher} isMobile={isMobile}
                 counseling={cur.counseling} onRefresh={refreshRecord} />
+            )}
+            {activeTab === '학습분석' && isTeacher && (
+              <AnalyticsTab user={user} />
             )}
           </div>
         </div>

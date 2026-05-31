@@ -3,6 +3,8 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const pool = require('./db');
+const { initAnalytics } = require('./init_analytics');
+const { startEtlWorker } = require('./etl');
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
 
@@ -48,6 +50,7 @@ app.use('/api/feedback',      require('./routes/feedback'));
 app.use('/api/counseling',    require('./routes/counseling'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/schools',       require('./routes/schools'));
+app.use('/api/analytics',    require('./routes/analytics'));
 
 // 학부모 자녀 조회 (childName으로 학생 찾기)
 app.get('/api/my-child', async (req, res) => {
@@ -57,11 +60,21 @@ app.get('/api/my-child', async (req, res) => {
   try {
     const user = jwt.verify(token, process.env.JWT_SECRET || 'dev_secret_key');
     if (user.role !== 'parent') return res.status(403).json({ error: '권한 없음' });
-    const [parentRows] = await pool.query('SELECT child_name FROM users WHERE id=? AND role=?', [user.id, 'parent']);
-    if (!parentRows[0]?.child_name) return res.json({ child: null });
+    // 새 parents 테이블 우선, 구 users 폴백
+    const [[parentProfile]] = await pool.query('SELECT child_name FROM parents WHERE user_id=?', [user.id]);
+    const [[parentLegacy]]  = await pool.query('SELECT child_name FROM users WHERE id=? AND role=?', [user.id, 'parent']);
+    const childName = parentProfile?.child_name || parentLegacy?.child_name;
+    if (!childName) return res.json({ child: null });
     const [childRows] = await pool.query(
-      "SELECT id, name, grade, class_num as classNum, student_number as studentNumber FROM users WHERE name=? AND role='student'",
-      [parentRows[0].child_name]
+      `SELECT u.id, u.name,
+              COALESCE(c.grade,     u.grade)          AS grade,
+              COALESCE(c.class_num, u.class_num)      AS classNum,
+              COALESCE(s.student_number, u.student_number) AS studentNumber
+       FROM users u
+       LEFT JOIN students s ON s.user_id = u.id
+       LEFT JOIN classes  c ON c.id = s.class_id
+       WHERE u.name = ? AND u.role = 'student'`,
+      [childName]
     );
     res.json({ child: childRows[0] || null });
   } catch {
@@ -86,6 +99,8 @@ app.listen(PORT, async () => {
     const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
     await pool.query(schema);
     console.log('DB 스키마 초기화 완료');
+    await initAnalytics();
+    startEtlWorker();
   } catch (err) {
     console.error('DB 초기화 오류:', err.message);
   }
