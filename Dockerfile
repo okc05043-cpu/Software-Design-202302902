@@ -2,11 +2,11 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# 프론트엔드 의존성 설치 (devDependencies 포함 — vite 빌드에 필요)
+# 프론트엔드 의존성 설치 (vite 포함)
 COPY package*.json ./
 RUN npm install
 
-# 소스 복사 후 프론트엔드 빌드
+# 소스 복사 및 프론트엔드 빌드
 COPY . .
 RUN npm run build
 
