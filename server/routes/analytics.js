@@ -7,7 +7,7 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const router = express.Router();
 router.use(auth);
 
-const genai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY, { apiVersion: 'v1' });
+const genai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // 교사만 분석 데이터 조회 가능
 function teacherOnly(req, res, next) {
@@ -185,10 +185,10 @@ ${subjectLines}
       ? `다음 데이터를 참고해서 답변해주세요:\n${contextText}\n질문: ${message}`
       : message;
 
-    const model = genai.getGenerativeModel({
-      model: 'gemini-1.5-flash',
-      systemInstruction: systemPrompt,
-    });
+    const model = genai.getGenerativeModel(
+      { model: 'gemini-1.5-flash', systemInstruction: systemPrompt },
+      { apiVersion: 'v1' }
+    );
     const result = await model.generateContent(userPrompt);
     res.json({ reply: result.response.text() });
   } catch (err) {
