@@ -291,7 +291,7 @@ router.post('/chat', teacherOnly, async (req, res) => {
       );
       if (summary) {
         const subjectLines = subjects.map(s => `  ${s.subject_name}: ${s.score}점`).join(', ');
-        contextText += `\n[선택된 학생]\n${summary.student_name} | 평균 ${summary.avg_score}점 | 출석률 ${summary.attendance_rate}% | ${subjectLines}\n`;
+        contextText += `\n[선택된 학생]\n이름: ${summary.student_name} | student_id: ${student_id} | 평균 ${summary.avg_score}점 | 출석률 ${summary.attendance_rate}% | ${subjectLines}\n`;
       }
     } else {
       const [students] = await pool.query(
@@ -312,9 +312,9 @@ router.post('/chat', teacherOnly, async (req, res) => {
 
     const systemPrompt = `당신은 교사의 학생 관리를 돕는 AI입니다.
 규칙:
-- 답변은 2~3문장 이내로 짧게. 불필요한 설명 금지.
-- 피드백/상담 추가, 성적/출결 수정 요청이 오면 확인 없이 즉시 도구 실행.
-- 도구 실행 후 "완료" 한 줄로 보고.
+- 성적/출결 수정, 피드백/상담 추가 요청은 반드시 해당 도구(function)를 호출해서 실행해야 한다. 텍스트로만 답하면 안 된다.
+- 도구 호출 후 결과를 받으면 한 줄로 완료 보고.
+- 일반 질문은 2~3문장 이내로 짧게.
 - 데이터가 없으면 "데이터 없음"으로 끝.
 오늘 날짜: ${new Date().toISOString().slice(0, 10)}`;
 
@@ -342,7 +342,9 @@ router.post('/chat', teacherOnly, async (req, res) => {
       const calls = candidate.functionCalls();
       const toolResults = [];
       for (const call of calls) {
+        console.log('[AI Tool Call]', call.name, JSON.stringify(call.args));
         const result = await executeTool(call.name, call.args, req.user);
+        console.log('[AI Tool Result]', result);
         toolResults.push({
           functionResponse: { name: call.name, response: { result } },
         });
