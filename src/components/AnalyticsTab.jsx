@@ -388,7 +388,7 @@ function ChatBotView({ students }) {
   const [selectedId, setSelectedId] = useState('');
   const [input, setInput]           = useState('');
   const [messages, setMessages]     = useState([
-    { role: 'ai', text: '안녕하세요! 학생 학습 현황에 대해 질문하세요.\n특정 학생을 선택하면 해당 학생 데이터를 바탕으로 답변합니다.' },
+    { role: 'ai', text: '학생 데이터 질문 또는 피드백/상담 추가, 성적/출결 수정을 말씀하세요.' },
   ]);
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef(null);
