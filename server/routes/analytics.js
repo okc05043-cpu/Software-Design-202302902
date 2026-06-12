@@ -319,7 +319,7 @@ router.post('/chat', teacherOnly, async (req, res) => {
 오늘 날짜: ${new Date().toISOString().slice(0, 10)}`;
 
     const model = genai.getGenerativeModel(
-      { model: 'gemini-2.5-flash-lite', tools: aiTools, systemInstruction: systemPrompt },
+      { model: 'gemini-1.5-flash', tools: aiTools, systemInstruction: systemPrompt },
       { apiVersion: 'v1beta' }
     );
 
