@@ -319,13 +319,11 @@ router.post('/chat', teacherOnly, async (req, res) => {
 오늘 날짜: ${new Date().toISOString().slice(0, 10)}`;
 
     const model = genai.getGenerativeModel(
-      { model: 'gemini-2.5-flash-lite', tools: aiTools },
-      { apiVersion: 'v1' }
+      { model: 'gemini-2.5-flash-lite', tools: aiTools, systemInstruction: systemPrompt },
+      { apiVersion: 'v1beta' }
     );
 
-    const chat = model.startChat({
-      history: [{ role: 'user', parts: [{ text: systemPrompt }] }],
-    });
+    const chat = model.startChat();
 
     let response = await chat.sendMessage(`${contextText}\n질문: ${message}`);
     let candidate = response.response;
