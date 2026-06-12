@@ -338,7 +338,7 @@ router.post('/chat', teacherOnly, async (req, res) => {
     let candidate = response.response;
 
     // 함수 호출 처리 루프
-    while (candidate.functionCalls && candidate.functionCalls().length > 0) {
+    while ((candidate.functionCalls?.() ?? []).length > 0) {
       const calls = candidate.functionCalls();
       const toolResults = [];
       for (const call of calls) {
