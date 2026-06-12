@@ -319,13 +319,22 @@ router.post('/chat', teacherOnly, async (req, res) => {
 오늘 날짜: ${new Date().toISOString().slice(0, 10)}`;
 
     const model = genai.getGenerativeModel(
-      { model: 'gemini-2.0-flash-lite', tools: aiTools, systemInstruction: systemPrompt },
+      { model: 'gemini-2.5-flash-lite', tools: aiTools, systemInstruction: systemPrompt },
       { apiVersion: 'v1beta' }
     );
 
-    const chat = model.startChat();
-
-    let response = await chat.sendMessage(`${contextText}\n질문: ${message}`);
+    // 503 일시 과부하 시 최대 3회 재시도
+    let chat, response;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        chat = model.startChat();
+        response = await chat.sendMessage(`${contextText}\n질문: ${message}`);
+        break;
+      } catch (e) {
+        if (attempt === 3 || !e.message.includes('503')) throw e;
+        await new Promise(r => setTimeout(r, attempt * 2000));
+      }
+    }
     let candidate = response.response;
 
     // 함수 호출 처리 루프
